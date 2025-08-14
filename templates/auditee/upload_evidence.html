@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Upload Evidence{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Upload Evidence for Finding</h2>
+                <a href="{{ url_for('auditee_finding_detail', finding_id=finding.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Finding
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5>Finding Details</h5>
+                </div>
+                <div class="card-body">
+                    <h4>{{ finding.title }}</h4>
+                    {% if finding.description %}
+                    <p class="text-muted">{{ finding.description }}</p>
+                    {% endif %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Severity:</strong> 
+                            <span class="badge bg-{{ 'danger' if finding.severity == 'critical' else 'warning' if finding.severity == 'high' else 'info' }}">
+                                {{ finding.severity.title() }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Status:</strong> {{ finding.status.replace('_', ' ').title() }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Upload Evidence</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Evidence Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                   placeholder="e.g., Corrective Action Documentation">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"
+                                      placeholder="Describe what this evidence demonstrates..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="evidence_type" class="form-label">Evidence Type *</label>
+                            <select class="form-select" id="evidence_type" name="evidence_type" required>
+                                <option value="">Select type...</option>
+                                <option value="document">Document</option>
+                                <option value="screenshot">Screenshot</option>
+                                <option value="policy">Policy/Procedure</option>
+                                <option value="training">Training Record</option>
+                                <option value="certificate">Certificate</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="file" class="form-label">File Upload *</label>
+                            <input type="file" class="form-control" id="file" name="file" required
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt">
+                            <div class="form-text">
+                                Supported formats: PDF, Word, Excel, Images (PNG, JPG), Text files. Max size: 10MB
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('auditee_evidence') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Upload Evidence
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

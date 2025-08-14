@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Corrective Actions{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>My Corrective Actions</h2>
+            
+            {% if actions %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Finding</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for action in actions %}
+                                <tr>
+                                    <td>{{ action.title }}</td>
+                                    <td>{{ action.finding.title if action.finding else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if action.status == 'completed' else 'warning' }}">
+                                            {{ action.status.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ action.due_date.strftime('%Y-%m-%d') if action.due_date else 'N/A' }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Update Status</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">No corrective actions assigned yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

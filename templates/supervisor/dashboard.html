@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% block title %}Supervisor Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <h2>Supervisor Dashboard</h2>
+            <p class="text-muted">Monitor and review audit progress and evidence submissions</p>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Supervised Audits</h5>
+                            <h2 class="mb-0">{{ supervised_audits_count or 0 }}</h2>
+                            <small>Active Audits</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clipboard-check fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Plans to Review</h5>
+                            <h2 class="mb-0">{{ plans_pending_count or 0 }}</h2>
+                            <small>Awaiting Approval</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-gavel fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Evidence Review</h5>
+                            <h2 class="mb-0">{{ pending_evidence_count or 0 }}</h2>
+                            <small>Pending Review</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-file-upload fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Audit Progress</h5>
+                            <h2 class="mb-0">{{ average_progress or 75 }}%</h2>
+                            <small>Average Completion</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- PLANS PENDING APPROVAL - PRIORITY SECTION -->
+            {% if plans_pending_approval %}
+            <div class="card mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Audit Plans Pending Approval ({{ plans_pending_count }})
+                        <span class="badge bg-dark ms-2">Action Required</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Audit</th>
+                                    <th>Auditor</th>
+                                    <th>Submitted</th>
+                                    <th>Priority</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for audit in plans_pending_approval %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ audit.title }}</strong><br>
+                                        <small class="text-muted">{{ audit.reference_number }}</small>
+                                    </td>
+                                    <td>{{ audit.auditor.full_name if audit.auditor else 'Not assigned' }}</td>
+                                    <td>{{ audit.plan_submitted_at.strftime('%m/%d/%Y %I:%M %p') if audit.plan_submitted_at else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if audit.priority == 'critical' else 'warning' if audit.priority == 'high' else 'primary' }}">
+                                            {{ audit.priority.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('supervisor_review_plan', audit_id=audit.id) }}" 
+                                           class="btn btn-sm btn-warning">
+                                            <i class="fas fa-gavel me-1"></i>Review Plan
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Evidence Requiring Review -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-upload me-2"></i>Evidence Awaiting Review
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if pending_evidence %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Evidence</th>
+                                    <th>Finding</th>
+                                    <th>Audit</th>
+                                    <th>Uploaded</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evidence in pending_evidence %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ evidence.original_filename }}</strong><br>
+                                        <small class="text-muted">{{ evidence.description[:50] }}...</small>
+                                    </td>
+                                    <td>{{ evidence.finding.title if evidence.finding else 'N/A' }}</td>
+                                    <td>{{ evidence.finding.audit.title if evidence.finding and evidence.finding.audit else 'N/A' }}</td>
+                                    <td>{{ evidence.uploaded_at.strftime('%m/%d/%Y') if evidence.uploaded_at else 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('supervisor_review_evidence', evidence_id=evidence.id) }}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye me-1"></i>Review
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <h5>No Evidence Pending Review</h5>
+                        <p class="text-muted">All submitted evidence has been reviewed!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- My Supervised Audits -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>My Supervised Audits
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if supervised_audits %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Audit</th>
+                                    <th>Department</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for audit in supervised_audits %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ audit.title }}</strong><br>
+                                        <small class="text-muted">{{ audit.description[:50] }}...</small>
+                                    </td>
+                                    <td>{{ audit.department.name if audit.department else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if audit.status == 'completed' else 'primary' if audit.status == 'in_progress' else 'secondary' }}">
+                                            {{ audit.status.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar" role="progressbar" style="width: {{ audit.progress or 0 }}%">
+                                            </div>
+                                        </div>
+                                        <small>{{ audit.progress or 0 }}%</small>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('audit_detail', audit_id=audit.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
+                        <h5>No Supervised Audits</h5>
+                        <p class="text-muted">You are not currently supervising any audits.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightning me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if plans_pending_count > 0 %}
+                        <a href="#" onclick="scrollToPlans()" class="btn btn-warning">
+                            <i class="fas fa-gavel me-2"></i>Review Plans ({{ plans_pending_count }})
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('supervisor_reports') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-chart-bar me-2"></i>View Reports
+                        </a>
+                        <a href="{{ url_for('admin_notifications') if current_user.role == 'admin' else '#' }}" class="btn btn-outline-info">
+                            <i class="fas fa-bell me-2"></i>Notifications
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_activities %}
+                    <div class="list-group list-group-flush">
+                        {% for activity in recent_activities %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ activity.action }}</h6>
+                                    <p class="mb-1 small text-muted">{{ activity.details }}</p>
+                                    <small class="text-muted">{{ activity.created_at.strftime('%m/%d %H:%M') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">No recent activity</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function scrollToPlans() {
+    document.querySelector('.border-warning').scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+</script>
+{% endblock %}

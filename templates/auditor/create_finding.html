@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Create Finding - Audit Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-exclamation-triangle me-2"></i>Create Finding
+            </h1>
+            <a href="{{ url_for('auditor_audit_detail', audit_id=audit.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Audit
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Finding Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Finding Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                                <div class="invalid-feedback">
+                                    Please provide a finding title.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="severity" class="form-label">Severity <span class="text-danger">*</span></label>
+                                <select class="form-select" id="severity" name="severity" required>
+                                    <option value="">Select Severity</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please select a severity level.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required 
+                                  placeholder="Describe the finding in detail..."></textarea>
+                        <div class="invalid-feedback">
+                            Please provide a finding description.
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <input type="text" class="form-control" id="category" name="category" 
+                                       placeholder="e.g., Compliance, Security, Process">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="due_date" class="form-label">Due Date</label>
+                                <input type="date" class="form-control" id="due_date" name="due_date">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Assessment Section -->
+                    <div class="mb-3">
+                        <label for="risk_assessment" class="form-label">Risk Assessment</label>
+                        <textarea class="form-control" id="risk_assessment" name="risk_assessment" rows="3" 
+                                  placeholder="Analyze the potential risks and impact of this finding..."></textarea>
+                        <small class="form-text text-muted">
+                            Assess the potential risks, impact on business operations, compliance implications, and likelihood of occurrence.
+                        </small>
+                    </div>
+
+                    <!-- Recommendation Section -->
+                    <div class="mb-3">
+                        <label for="recommendation" class="form-label">Recommendation</label>
+                        <textarea class="form-control" id="recommendation" name="recommendation" rows="3" 
+                                  placeholder="Provide specific recommendations to address this finding..."></textarea>
+                        <small class="form-text text-muted">
+                            Provide specific, actionable recommendations for the auditee to address this finding.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="auditee_id" class="form-label">Assign to Auditee</label>
+                        <select class="form-select" id="auditee_id" name="auditee_id">
+                            <option value="">Select Auditee</option>
+                            {% for auditee in auditees %}
+                            <option value="{{ auditee.id }}">{{ auditee.full_name }} ({{ auditee.department.name if auditee.department else 'No Department' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('auditor_audit_detail', audit_id=audit.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-2"></i>Create Finding
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Audit Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Audit Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Reference:</strong> {{ audit.reference_number }}</p>
+                <p><strong>Title:</strong> {{ audit.title }}</p>
+                <p><strong>Type:</strong> {{ audit.audit_type.title() }}</p>
+                <p><strong>Department:</strong> {{ audit.department.name if audit.department else 'N/A' }}</p>
+                <p><strong>Status:</strong> 
+                    <span class="badge bg-{{ 'warning' if audit.status == 'in_progress' else 'success' if audit.status == 'completed' else 'secondary' }}">
+                        {{ audit.status.replace('_', ' ').title() }}
+                    </span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Severity Guidelines -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Severity Guidelines
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <span class="badge bg-info">Low</span>
+                    <small class="text-muted ms-2">Minor process improvements</small>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-warning">Medium</span>
+                    <small class="text-muted ms-2">Moderate impact on operations</small>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-danger">High</span>
+                    <small class="text-muted ms-2">Significant compliance or operational risk</small>
+                </div>
+                <div class="mb-0">
+                    <span class="badge bg-dark">Critical</span>
+                    <small class="text-muted ms-2">Immediate attention required</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

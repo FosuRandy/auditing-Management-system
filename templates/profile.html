@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Audit Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-user-circle me-2"></i>User Profile
+            </h1>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <div class="avatar-container">
+                        <i class="fas fa-user-circle fa-5x text-{{ 'success' if user.role == 'admin' else 'info' if user.role == 'supervisor' else 'warning' if user.role == 'auditor' else 'secondary' }}"></i>
+                    </div>
+                </div>
+                <h4>{{ user.full_name }}</h4>
+                <p class="text-muted">{{ user.email }}</p>
+                <span class="badge bg-{{ 'success' if user.role == 'admin' else 'info' if user.role == 'supervisor' else 'warning' if user.role == 'auditor' else 'secondary' }} fs-6 px-3 py-2">
+                    <i class="fas fa-{{ 'user-shield' if user.role == 'admin' else 'user-tie' if user.role == 'supervisor' else 'search' if user.role == 'auditor' else 'user-check' }} me-2"></i>
+                    {{ user.role.title() }}
+                </span>
+                
+                {% if user.password_reset_required %}
+                <div class="alert alert-warning mt-3" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Password change required
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Account Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless table-sm">
+                    <tr>
+                        <td><strong>Username:</strong></td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department:</strong></td>
+                        <td>{{ user.department.name if user.department else 'Not assigned' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if user.is_active else 'danger' }}">
+                                {{ 'Active' if user.is_active else 'Inactive' }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Member since:</strong></td>
+                        <td>{{ user.created_at.strftime('%B %d, %Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Last login:</strong></td>
+                        <td>{{ user.last_login.strftime('%m/%d/%Y %H:%M') if user.last_login else 'Never' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <!-- Notifications Section -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>My Notifications
+                    </h5>
+                    {% if notifications %}
+                    <form method="POST" action="{{ url_for('delete_all_user_notifications') }}" style="display: inline;" 
+                          onsubmit="return confirm('Are you sure you want to delete all notifications?')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash me-1"></i>Delete All
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% if notifications %}
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications %}
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ notification.title }}</h6>
+                            <p class="mb-1">{{ notification.message }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>{{ notification.created_at.strftime('%m/%d/%Y %H:%M') }}
+                                {% if not notification.is_read %}
+                                <span class="badge bg-primary ms-2">New</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                        <form method="POST" action="{{ url_for('delete_user_notification', notification_id=notification.id) }}" 
+                              style="display: inline;" onsubmit="return confirm('Delete this notification?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete notification">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                    <h5>No Notifications</h5>
+                    <p class="text-muted">You don't have any notifications yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+        {% if change_password %}
+        <!-- Change Password Form -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-key me-2"></i>Change Password
+                    {% if user.password_reset_required %}
+                    <span class="badge bg-warning ms-2">Required</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('change_password') }}">
+                    <div class="mb-3">
+                        <label for="current_password" class="form-label">Current Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('current_password')">
+                                <i class="fas fa-eye" id="current_password_icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-key"></i>
+                            </span>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required minlength="8">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('new_password')">
+                                <i class="fas fa-eye" id="new_password_icon"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Password must be at least 8 characters long.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm New Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-key"></i>
+                            </span>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="8">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirm_password')">
+                                <i class="fas fa-eye" id="confirm_password_icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Password Strength Indicator -->
+                    <div class="mb-3">
+                        <div class="password-strength">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Password Strength</small>
+                                <small id="strengthText">Weak</small>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar" id="strengthBar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <div id="strengthRequirements">
+                                    <div id="req-length" class="requirement">
+                                        <i class="fas fa-times text-danger me-1"></i>At least 8 characters
+                                    </div>
+                                    <div id="req-uppercase" class="requirement">
+                                        <i class="fas fa-times text-danger me-1"></i>One uppercase letter
+                                    </div>
+                                    <div id="req-lowercase" class="requirement">
+                                        <i class="fas fa-times text-danger me-1"></i>One lowercase letter
+                                    </div>
+                                    <div id="req-number" class="requirement">
+                                        <i class="fas fa-times text-danger me-1"></i>One number
+                                    </div>
+                                    <div id="req-special" class="requirement">
+                                        <i class="fas fa-times text-danger me-1"></i>One special character (!@#$%^&*)
+                                    </div>
+                                </div>
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        {% if not user.password_reset_required %}
+                        <a href="{{ url_for('profile') }}" class="btn btn-secondary">Cancel</a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <!-- Profile Information -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>Profile Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-control" value="{{ user.first_name }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-control" value="{{ user.last_name }}" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <input type="text" class="form-control" value="{{ user.role.title() }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Department</label>
+                            <input type="text" class="form-control" value="{{ user.department.name if user.department else 'Not assigned' }}" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <a href="{{ url_for('change_password') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-key me-2"></i>Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activity Summary -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Activity Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    {% if user.role == 'auditor' %}
+                    <div class="col-md-4">
+                        <h4 class="text-primary">{{ user.assigned_audits|length }}</h4>
+                        <small class="text-muted">Assigned Audits</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-warning">{{ user.assigned_audits|selectattr("status", "equalto", "in_progress")|list|length }}</h4>
+                        <small class="text-muted">In Progress</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-success">{{ user.assigned_audits|selectattr("status", "equalto", "closed")|list|length }}</h4>
+                        <small class="text-muted">Completed</small>
+                    </div>
+                    {% elif user.role == 'auditee' %}
+                    <div class="col-md-4">
+                        <h4 class="text-primary">{{ user.auditee_audits|length }}</h4>
+                        <small class="text-muted">Subject of Audits</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-warning">{{ user.auditee_audits|selectattr("status", "equalto", "in_progress")|list|length }}</h4>
+                        <small class="text-muted">Active Audits</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-info">0</h4>
+                        <small class="text-muted">Pending Actions</small>
+                    </div>
+                    {% elif user.role == 'supervisor' %}
+                    <div class="col-md-4">
+                        <h4 class="text-primary">{{ user.supervised_audits|length }}</h4>
+                        <small class="text-muted">Supervised Audits</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-warning">{{ user.supervised_audits|selectattr("status", "equalto", "review")|list|length }}</h4>
+                        <small class="text-muted">Pending Review</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-success">{{ user.supervised_audits|selectattr("status", "equalto", "closed")|list|length }}</h4>
+                        <small class="text-muted">Approved</small>
+                    </div>
+                    {% elif user.role == 'admin' %}
+                    <div class="col-md-3">
+                        <h4 class="text-primary">{{ user.created_templates|length }}</h4>
+                        <small class="text-muted">Templates Created</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-success">{{ user.assigned_audits|length }}</h4>
+                        <small class="text-muted">Audits Created</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-info">{{ user.department.users|length if user.department else 0 }}</h4>
+                        <small class="text-muted">Department Users</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">0</h4>
+                        <small class="text-muted">System Alerts</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '_icon');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        field.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+function checkPasswordStrength(password) {
+    let score = 0;
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /\d/.test(password),
+        special: /[!@#$%^&*]/.test(password)
+    };
+    
+    // Update requirement indicators
+    for (const [key, met] in Object.entries(requirements)) {
+        const reqElement = document.getElementById('req-' + key);
+        const icon = reqElement.querySelector('i');
+        
+        if (met) {
+            icon.className = 'fas fa-check text-success me-1';
+            score++;
+        } else {
+            icon.className = 'fas fa-times text-danger me-1';
+        }
+    }
+    
+    // Update strength bar
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    const percentage = (score / 5) * 100;
+    
+    strengthBar.style.width = percentage + '%';
+    
+    if (score <= 2) {
+        strengthBar.className = 'progress-bar bg-danger';
+        strengthText.textContent = 'Weak';
+    } else if (score <= 3) {
+        strengthBar.className = 'progress-bar bg-warning';
+        strengthText.textContent = 'Fair';
+    } else if (score <= 4) {
+        strengthBar.className = 'progress-bar bg-info';
+        strengthText.textContent = 'Good';
+    } else {
+        strengthBar.className = 'progress-bar bg-success';
+        strengthText.textContent = 'Strong';
+    }
+    
+    return score >= 4;
+}
+
+function validatePasswordMatch() {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    const confirmField = document.getElementById('confirm_password');
+    
+    if (confirmPassword && newPassword !== confirmPassword) {
+        confirmField.setCustomValidity('Passwords do not match');
+        confirmField.classList.add('is-invalid');
+    } else {
+        confirmField.setCustomValidity('');
+        confirmField.classList.remove('is-invalid');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const newPasswordField = document.getElementById('new_password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    
+    if (newPasswordField) {
+        newPasswordField.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+            validatePasswordMatch();
+        });
+        
+        confirmPasswordField.addEventListener('input', validatePasswordMatch);
+        
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const newPassword = newPasswordField.value;
+            const confirmPassword = confirmPasswordField.value;
+            
+            if (!checkPasswordStrength(newPassword)) {
+                e.preventDefault();
+                alert('Please ensure your password meets all requirements');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match');
+                return;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

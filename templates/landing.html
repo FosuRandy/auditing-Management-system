@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Audit Management System{% endblock %}
+
+{% block content %}
+<div class="landing-container">
+    <div class="container">
+        <div class="row justify-content-center min-vh-100 align-items-center">
+            <div class="col-lg-8">
+                <div class="text-center mb-5">
+                    <div class="landing-logo mb-4">
+                        <i class="fas fa-clipboard-check fa-5x text-primary"></i>
+                    </div>
+                    <h1 class="display-4 fw-bold text-primary mb-3">Audit Management System</h1>
+                    <p class="lead text-muted">Professional audit management with role-based access control</p>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Admin Login -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="role-card admin-card h-100">
+                            <div class="card border-0 shadow-lg h-100">
+                                <div class="card-body text-center p-4">
+                                    <div class="role-icon mb-3">
+                                        <i class="fas fa-user-shield fa-3x text-success"></i>
+                                    </div>
+                                    <h4 class="card-title text-success mb-3">Administrator</h4>
+                                    <p class="card-text text-muted mb-4">Full system access and user management</p>
+                                    <a href="{{ url_for('login_form', role='admin') }}" class="btn btn-success btn-lg w-100">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Login as Admin
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Supervisor Login -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="role-card supervisor-card h-100">
+                            <div class="card border-0 shadow-lg h-100">
+                                <div class="card-body text-center p-4">
+                                    <div class="role-icon mb-3">
+                                        <i class="fas fa-user-tie fa-3x text-info"></i>
+                                    </div>
+                                    <h4 class="card-title text-info mb-3">Supervisor</h4>
+                                    <p class="card-text text-muted mb-4">Audit oversight and approval authority</p>
+                                    <a href="{{ url_for('login_form', role='supervisor') }}" class="btn btn-info btn-lg w-100">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Login as Supervisor
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Auditor Login -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="role-card auditor-card h-100">
+                            <div class="card border-0 shadow-lg h-100">
+                                <div class="card-body text-center p-4">
+                                    <div class="role-icon mb-3">
+                                        <i class="fas fa-search fa-3x text-warning"></i>
+                                    </div>
+                                    <h4 class="card-title text-warning mb-3">Auditor</h4>
+                                    <p class="card-text text-muted mb-4">Conduct audits and document findings</p>
+                                    <a href="{{ url_for('login_form', role='auditor') }}" class="btn btn-warning btn-lg w-100">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Login as Auditor
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Auditee Login -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="role-card auditee-card h-100">
+                            <div class="card border-0 shadow-lg h-100">
+                                <div class="card-body text-center p-4">
+                                    <div class="role-icon mb-3">
+                                        <i class="fas fa-user-check fa-3x text-secondary"></i>
+                                    </div>
+                                    <h4 class="card-title text-secondary mb-3">Auditee</h4>
+                                    <p class="card-text text-muted mb-4">Subject to audits and corrective actions</p>
+                                    <a href="{{ url_for('login_form', role='auditee') }}" class="btn btn-secondary btn-lg w-100">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Login as Auditee
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-5">
+                    <p class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Secure role-based access control with comprehensive audit trails
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Review Audit Plan - {{ audit.reference_number }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-gavel me-2"></i>Review Audit Plan
+            </h1>
+            <div>
+                <span class="badge bg-primary fs-6">{{ audit.reference_number }}</span>
+                <span class="badge bg-warning ms-2">Awaiting Director Approval</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Plan Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Audit Plan Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Title:</strong> {{ audit.title }}</p>
+                        <p><strong>Type:</strong> {{ audit.audit_type.replace('_', ' ').title() }}</p>
+                        <p><strong>Priority:</strong> 
+                            <span class="badge bg-{{ 'danger' if audit.priority == 'critical' else 'warning' if audit.priority == 'high' else 'primary' }}">
+                                {{ audit.priority.title() }}
+                            </span>
+                        </p>
+                        <p><strong>Department:</strong> {{ audit.assigned_department.name if audit.assigned_department else 'Not specified' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Planned Start:</strong> {{ audit.planned_start_date.strftime('%m/%d/%Y') if audit.planned_start_date else 'Not set' }}</p>
+                        <p><strong>Planned End:</strong> {{ audit.planned_end_date.strftime('%m/%d/%Y') if audit.planned_end_date else 'Not set' }}</p>
+                        <p><strong>Submitted by:</strong> {{ audit.head_of_business_control.full_name if audit.head_of_business_control else 'Unknown' }}</p>
+                        <p><strong>Submitted:</strong> {{ audit.plan_submitted_at.strftime('%m/%d/%Y %I:%M %p') if audit.plan_submitted_at else 'Unknown' }}</p>
+                    </div>
+                </div>
+                
+                {% if audit.description %}
+                <div class="mt-3">
+                    <strong>Description:</strong>
+                    <p class="text-muted">{{ audit.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Audit Plan Content -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-map me-2"></i>Comprehensive Audit Plan
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if audit.audit_scope %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-bullseye me-2"></i>Scope</h6>
+                    <div class="bg-light p-3 rounded">
+                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">{{ audit.audit_scope }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if audit.audit_objectives %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-target me-2"></i>Objectives</h6>
+                    <div class="bg-light p-3 rounded">
+                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">{{ audit.audit_objectives }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if audit.audit_criteria %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-check-circle me-2"></i>Criteria</h6>
+                    <div class="bg-light p-3 rounded">
+                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">{{ audit.audit_criteria }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if audit.resources_needed %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-tools me-2"></i>Resources Needed</h6>
+                    <div class="bg-light p-3 rounded">
+                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">{{ audit.resources_needed }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if audit.audit_plan %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-clipboard-list me-2"></i>Full Plan</h6>
+                    <div class="bg-light p-3 rounded">
+                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">{{ audit.audit_plan }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Director Decision Form -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-gavel me-2"></i>Director Decision Required
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('director_approve_plan', audit_id=audit.id) }}">
+                    <div class="mb-3">
+                        <label for="director_feedback" class="form-label">Director Feedback <small class="text-muted">(Optional)</small></label>
+                        <textarea class="form-control" id="director_feedback" name="director_feedback" rows="4"
+                                  placeholder="Provide feedback, conditions, or comments about this audit plan..."></textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-3">
+                        <button type="submit" name="decision" value="approve" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>Approve Plan
+                        </button>
+                        <button type="submit" name="decision" value="reject" class="btn btn-danger">
+                            <i class="fas fa-times me-2"></i>Request Changes
+                        </button>
+                        <a href="{{ url_for('director_dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Plan Summary -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Plan Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Status:</strong> Pending Director Approval
+                </div>
+                <div class="mb-3">
+                    <strong>Head of Business Control:</strong><br>
+                    <small class="text-muted">{{ audit.head_of_business_control.full_name if audit.head_of_business_control else 'Unknown' }}</small>
+                </div>
+                <div class="mb-3">
+                    <strong>Auditee:</strong><br>
+                    <small class="text-muted">{{ audit.auditee.full_name if audit.auditee else 'Not assigned' }}</small>
+                </div>
+                <div class="mb-3">
+                    <strong>Timeline:</strong><br>
+                    <small class="text-muted">
+                        {{ audit.planned_start_date.strftime('%b %d, %Y') if audit.planned_start_date else 'TBD' }} - 
+                        {{ audit.planned_end_date.strftime('%b %d, %Y') if audit.planned_end_date else 'TBD' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow Status -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-project-diagram me-2"></i>Workflow Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="workflow-steps">
+                    <div class="workflow-step completed">
+                        <div class="step-icon bg-success">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="step-content">
+                            <strong>Plan Created</strong>
+                            <div class="small text-muted">by Head of Business Control</div>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-step active">
+                        <div class="step-icon bg-warning">
+                            <i class="fas fa-gavel"></i>
+                        </div>
+                        <div class="step-content">
+                            <strong>Director Approval</strong>
+                            <div class="small text-muted">Current Step</div>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-step">
+                        <div class="step-icon bg-secondary">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="step-content">
+                            <strong>Auditor Assignment</strong>
+                            <div class="small text-muted">Next Step</div>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-step">
+                        <div class="step-icon bg-secondary">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div class="step-content">
+                            <strong>Audit Execution</strong>
+                            <div class="small text-muted">Final Step</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.workflow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.workflow-step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.step-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.workflow-step.completed .step-icon {
+    background-color: #28a745 !important;
+}
+
+.workflow-step.active .step-icon {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.step-content strong {
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

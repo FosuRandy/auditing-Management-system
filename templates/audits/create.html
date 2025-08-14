@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Create Audit - Audit Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-plus me-2"></i>Create New Audit
+            </h1>
+            <a href="{{ url_for('audit_list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Audits
+            </a>
+        </div>
+    </div>
+</div>
+
+<form method="POST">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Audit Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Audit Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="audit_type" class="form-label">Audit Type *</label>
+                                <select class="form-select" id="audit_type" name="audit_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="internal">Internal Audit</option>
+                                    <option value="external">External Audit</option>
+                                    <option value="compliance">Compliance Audit</option>
+                                    <option value="financial">Financial Audit</option>
+                                    <option value="operational">Operational Audit</option>
+                                    <option value="it">IT Audit</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority *</label>
+                                <select class="form-select" id="priority" name="priority" required>
+                                    <option value="">Select Priority</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="department_id" class="form-label">Department</label>
+                                <select class="form-select" id="department_id" name="department_id">
+                                    <option value="">Select Department</option>
+                                    {% for department in departments %}
+                                    <option value="{{ department.id }}">{{ department.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>Assignment
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="auditor_id" class="form-label">Auditor *</label>
+                        <select class="form-select" id="auditor_id" name="auditor_id" required>
+                            <option value="">Select Auditor</option>
+                            {% for auditor in auditors %}
+                            <option value="{{ auditor.id }}">{{ auditor.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="auditee_id" class="form-label">Auditee</label>
+                        <select class="form-select" id="auditee_id" name="auditee_id">
+                            <option value="">Select Auditee</option>
+                            {% for auditee in auditees %}
+                            <option value="{{ auditee.id }}">{{ auditee.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="supervisor_id" class="form-label">Supervisor</label>
+                        <select class="form-select" id="supervisor_id" name="supervisor_id">
+                            <option value="">Select Supervisor</option>
+                            {% for supervisor in supervisors %}
+                            <option value="{{ supervisor.id }}">{{ supervisor.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar me-2"></i>Timeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="planned_start_date" class="form-label">Planned Start Date *</label>
+                        <input type="date" class="form-control" id="planned_start_date" name="planned_start_date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="planned_end_date" class="form-label">Planned End Date *</label>
+                        <input type="date" class="form-control" id="planned_end_date" name="planned_end_date" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('audit_list') }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>Create Audit
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('planned_start_date').setAttribute('min', today);
+    document.getElementById('planned_end_date').setAttribute('min', today);
+    
+    // Update end date minimum when start date changes
+    document.getElementById('planned_start_date').addEventListener('change', function() {
+        const startDate = this.value;
+        document.getElementById('planned_end_date').setAttribute('min', startDate);
+    });
+});
+</script>
+{% endblock %}

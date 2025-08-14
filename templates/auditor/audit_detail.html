@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Details - {{ audit.reference_number }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2">
+                    <i class="fas fa-clipboard-check me-2"></i>{{ audit.title }}
+                    <small class="text-muted">- {{ audit.reference_number }}</small>
+                </h1>
+                <p class="text-muted mb-0">{{ audit.description or 'No description provided' }}</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('auditor_audits') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Audits
+                </a>
+                {% if audit.status == 'draft' %}
+                <form method="POST" action="{{ url_for('auditor_start_audit', audit_id=audit.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-success"
+                            onclick="return confirm('Are you ready to start this audit?')">
+                        <i class="fas fa-play me-1"></i>Start Audit
+                    </button>
+                </form>
+                {% elif audit.status == 'in_progress' %}
+                <a href="{{ url_for('auditor_create_finding', audit_id=audit.id) }}" class="btn btn-warning">
+                    <i class="fas fa-plus me-1"></i>Add Finding
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Audit Overview -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Audit Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Type:</strong> {{ audit.audit_type }}</p>
+                        <p><strong>Priority:</strong> 
+                            <span class="badge bg-{{ 'danger' if audit.priority == 'high' else 'warning' if audit.priority == 'medium' else 'secondary' }}">
+                                {{ audit.priority.title() }}
+                            </span>
+                        </p>
+                        <p><strong>Department:</strong> {{ audit.department.name if audit.department else 'Not assigned' }}</p>
+                        <p><strong>Auditee:</strong> {{ audit.auditee.full_name if audit.auditee else 'Not assigned' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Planned Start:</strong> {{ audit.planned_start_date.strftime('%B %d, %Y') }}</p>
+                        <p><strong>Planned End:</strong> {{ audit.planned_end_date.strftime('%B %d, %Y') }}</p>
+                        {% if audit.actual_start_date %}
+                        <p><strong>Actual Start:</strong> {{ audit.actual_start_date.strftime('%B %d, %Y') }}</p>
+                        {% endif %}
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-{{ 'info' if audit.status == 'draft' else 'warning' if audit.status == 'in_progress' else 'success' if audit.status == 'completed' else 'secondary' }}">
+                                {{ audit.status.replace('_', ' ').title() }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Progress Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set findings_count = findings|length %}
+                {% set open_findings = findings|selectattr("status", "equalto", "open")|list|length %}
+                {% set in_progress_findings = findings|selectattr("status", "equalto", "in_progress")|list|length %}
+                {% set resolved_findings = findings|selectattr("status", "equalto", "resolved")|list|length %}
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Total Findings</span>
+                        <strong>{{ findings_count }}</strong>
+                    </div>
+                    <div class="progress mt-1" style="height: 5px;">
+                        <div class="progress-bar bg-success" style="width: {{ (resolved_findings/findings_count*100)|round if findings_count > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="text-danger">
+                            <strong>{{ open_findings }}</strong>
+                            <br><small>Open</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-warning">
+                            <strong>{{ in_progress_findings }}</strong>
+                            <br><small>In Progress</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-success">
+                            <strong>{{ resolved_findings }}</strong>
+                            <br><small>Resolved</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Findings Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Findings ({{ findings|length }})
+                </h5>
+                {% if audit.status == 'in_progress' %}
+                <a href="{{ url_for('auditor_create_finding', audit_id=audit.id) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i>Add Finding
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if findings %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title</th>
+                                <th>Severity</th>
+                                <th>Auditee</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for finding in findings %}
+                            <tr>
+                                <td><code>{{ finding.reference_number }}</code></td>
+                                <td>
+                                    <strong>{{ finding.title }}</strong>
+                                    {% if finding.category %}
+                                    <br><span class="badge bg-secondary">{{ finding.category }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if finding.severity == 'critical' else 'warning' if finding.severity == 'high' else 'info' if finding.severity == 'medium' else 'secondary' }}">
+                                        {{ finding.severity.title() }}
+                                    </span>
+                                </td>
+                                <td>{{ finding.auditee.full_name if finding.auditee else 'Not assigned' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if finding.status == 'open' else 'info' if finding.status == 'in_progress' else 'success' if finding.status == 'resolved' else 'secondary' }}">
+                                        {{ finding.status.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ finding.due_date.strftime('%m/%d/%Y') if finding.due_date else '-' }}
+                                    {% if finding.due_date and finding.due_date < today %}
+                                    <br><small class="text-danger">Overdue</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('auditor_finding_detail', finding_id=finding.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-search text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No findings recorded for this audit yet.</p>
+                    {% if audit.status == 'in_progress' %}
+                    <a href="{{ url_for('auditor_create_finding', audit_id=audit.id) }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Add First Finding
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

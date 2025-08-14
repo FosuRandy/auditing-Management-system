@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Auditor Findings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>My Audit Findings</h2>
+            </div>
+
+            {% if findings %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Audit</th>
+                                    <th>Title</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for finding in findings %}
+                                <tr>
+                                    <td>{{ finding.audit.reference_number }}</td>
+                                    <td>{{ finding.title }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if finding.severity == 'critical' else 'warning' if finding.severity == 'high' else 'info' }}">
+                                            {{ finding.severity.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if finding.status == 'resolved' else 'warning' }}">
+                                            {{ finding.status.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ finding.due_date.strftime('%Y-%m-%d') if finding.due_date else 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('auditor_finding_detail', finding_id=finding.id) }}" class="btn btn-sm btn-primary">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">No findings created yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

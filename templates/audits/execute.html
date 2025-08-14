@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}{{ audit.reference_number }} - Audit Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2">
+                    <i class="fas fa-clipboard-check me-2"></i>{{ audit.reference_number }}
+                </h1>
+                <p class="text-muted mb-0">{{ audit.title }}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('audit_findings', audit_id=audit.id) }}" class="btn btn-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Findings
+                </a>
+                <a href="{{ url_for('audit_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Audits
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Audit Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Reference:</strong></td>
+                                <td>{{ audit.reference_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Title:</strong></td>
+                                <td>{{ audit.title }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Type:</strong></td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ audit.audit_type.title() }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if audit.status == 'closed' else 'primary' if audit.status == 'in_progress' else 'warning' if audit.status == 'review' else 'secondary' }}">
+                                        {{ audit.status.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Priority:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if audit.priority == 'critical' else 'warning' if audit.priority == 'high' else 'info' if audit.priority == 'medium' else 'secondary' }}">
+                                        {{ audit.priority.title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Auditor:</strong></td>
+                                <td>{{ audit.auditor.full_name if audit.auditor else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Auditee:</strong></td>
+                                <td>{{ audit.auditee.full_name if audit.auditee else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Supervisor:</strong></td>
+                                <td>{{ audit.supervisor.full_name if audit.supervisor else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Department:</strong></td>
+                                <td>{{ audit.assigned_department.name if audit.assigned_department else '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Created By:</strong></td>
+                                <td>{{ audit.created_by.full_name if audit.created_by else '-' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if audit.description %}
+                <div class="mt-3">
+                    <strong>Description:</strong>
+                    <p class="mt-2">{{ audit.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-paperclip me-2"></i>Evidence Files
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if audit.evidence_files %}
+                    <div class="list-group">
+                        {% for file in audit.evidence_files %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ file.original_filename }}</h6>
+                                    <small class="text-muted">
+                                        Uploaded by {{ file.uploaded_by.full_name }} on {{ file.uploaded_at.strftime('%m/%d/%Y %H:%M') }}
+                                    </small>
+                                    {% if file.description %}
+                                    <p class="mb-1 mt-2">{{ file.description }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-file fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">No evidence files uploaded yet</p>
+                    </div>
+                {% endif %}
+                
+                {% if user.id == audit.auditor_id or user.role in ['admin', 'supervisor'] %}
+                <div class="mt-3">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#uploadEvidenceModal">
+                        <i class="fas fa-upload me-2"></i>Upload Evidence
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar me-2"></i>Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6>Planned Start</h6>
+                            <small class="text-muted">{{ audit.planned_start_date.strftime('%m/%d/%Y') if audit.planned_start_date else 'Not set' }}</small>
+                        </div>
+                    </div>
+                    
+                    {% if audit.actual_start_date %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6>Actual Start</h6>
+                            <small class="text-muted">{{ audit.actual_start_date.strftime('%m/%d/%Y') }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-{{ 'success' if audit.planned_end_date and audit.actual_end_date and audit.planned_end_date < audit.actual_end_date else 'warning' }}"></div>
+                        <div class="timeline-content">
+                            <h6>Planned End</h6>
+                            <small class="text-muted">{{ audit.planned_end_date.strftime('%m/%d/%Y') if audit.planned_end_date else 'Not set' }}</small>
+                        </div>
+                    </div>
+                    
+                    {% if audit.actual_end_date %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6>Actual End</h6>
+                            <small class="text-muted">{{ audit.actual_end_date.strftime('%m/%d/%Y') }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if user.id == audit.auditor_id and audit.status == 'planned' %}
+                <div class="mt-3">
+                    <button class="btn btn-success w-100" onclick="startAudit({{ audit.id }})">
+                        <i class="fas fa-play me-2"></i>Start Audit
+                    </button>
+                </div>
+                {% endif %}
+                
+                {% if user.id == audit.auditor_id and audit.status == 'in_progress' %}
+                <div class="mt-3">
+                    <button class="btn btn-warning w-100" onclick="submitForReview({{ audit.id }})">
+                        <i class="fas fa-check me-2"></i>Submit for Review
+                    </button>
+                </div>
+                {% endif %}
+                
+                {% if user.role in ['admin', 'supervisor'] and audit.status == 'review' %}
+                <div class="mt-3 d-grid gap-2">
+                    <button class="btn btn-success" onclick="approveAudit({{ audit.id }})">
+                        <i class="fas fa-check me-2"></i>Approve & Close
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="requestChanges({{ audit.id }})">
+                        <i class="fas fa-edit me-2"></i>Request Changes
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Progress Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-warning">{{ audit.findings|length }}</h4>
+                        <small class="text-muted">Findings</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-info">{{ audit.evidence_files|length }}</h4>
+                        <small class="text-muted">Evidence Files</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Evidence Modal -->
+<div class="modal fade" id="uploadEvidenceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Evidence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="evidence_file" class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="evidence_file" name="evidence_file" required>
+                        <div class="form-text">Supported formats: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="evidence_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="evidence_description" name="evidence_description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function startAudit(auditId) {
+    if (confirm('Are you sure you want to start this audit?')) {
+        // Implementation for starting audit
+        location.reload();
+    }
+}
+
+function submitForReview(auditId) {
+    if (confirm('Are you sure you want to submit this audit for review?')) {
+        // Implementation for submitting for review
+        location.reload();
+    }
+}
+
+function approveAudit(auditId) {
+    if (confirm('Are you sure you want to approve and close this audit?')) {
+        // Implementation for approving audit
+        location.reload();
+    }
+}
+
+function requestChanges(auditId) {
+    const reason = prompt('Please provide a reason for requesting changes:');
+    if (reason) {
+        // Implementation for requesting changes
+        location.reload();
+    }
+}
+</script>
+{% endblock %}

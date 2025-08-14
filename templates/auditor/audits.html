@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}My Audits - Auditor Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-clipboard-check me-2"></i>My Assigned Audits
+            </h1>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-filter me-1"></i>Filter
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?status=all">All Audits</a></li>
+                    <li><a class="dropdown-item" href="?status=draft">Draft</a></li>
+                    <li><a class="dropdown-item" href="?status=in_progress">In Progress</a></li>
+                    <li><a class="dropdown-item" href="?status=completed">Completed</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                {% if audits %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title & Type</th>
+                                <th>Department</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Planned Period</th>
+                                <th>Progress</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for audit in audits %}
+                            <tr>
+                                <td>
+                                    <code class="text-primary">{{ audit.reference_number }}</code>
+                                    <br><small class="text-muted">Created: {{ audit.created_at.strftime('%m/%d/%Y') }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ audit.title }}</strong>
+                                    <br><span class="badge bg-info">{{ audit.audit_type }}</span>
+                                    {% if audit.description %}
+                                    <br><small class="text-muted">{{ audit.description[:100] }}{% if audit.description|length > 100 %}...{% endif %}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ audit.department.name if audit.department else '-' }}
+                                    {% if audit.auditee %}
+                                    <br><small class="text-muted">Auditee: {{ audit.auditee.full_name }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if audit.priority == 'high' else 'warning' if audit.priority == 'medium' else 'secondary' }}">
+                                        {{ audit.priority.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'info' if audit.status == 'draft' else 'warning' if audit.status == 'in_progress' else 'success' if audit.status == 'completed' else 'secondary' }}">
+                                        {{ audit.status.replace('_', ' ').title() }}
+                                    </span>
+                                    {% if audit.status == 'in_progress' and audit.planned_end_date < today %}
+                                    <br><small class="text-danger">Overdue</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>Start:</strong> {{ audit.planned_start_date.strftime('%m/%d/%Y') }}
+                                    <br><strong>End:</strong> {{ audit.planned_end_date.strftime('%m/%d/%Y') }}
+                                    {% if audit.actual_start_date %}
+                                    <br><small class="text-success">Started: {{ audit.actual_start_date.strftime('%m/%d/%Y') }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% set findings_count = audit.findings|length %}
+                                    {% set completed_findings = audit.findings|selectattr("status", "equalto", "resolved")|list|length %}
+                                    <div class="progress mb-1" style="height: 20px;">
+                                        {% if findings_count > 0 %}
+                                        {% set progress = (completed_findings / findings_count * 100)|round %}
+                                        <div class="progress-bar" style="width: {{ progress }}%">{{ progress }}%</div>
+                                        {% else %}
+                                        <div class="progress-bar bg-secondary" style="width: 100%">No Findings</div>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ completed_findings }}/{{ findings_count }} findings resolved</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('auditor_audit_detail', audit_id=audit.id) }}" 
+                                           class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if audit.status == 'draft' %}
+                                        <form method="POST" action="{{ url_for('auditor_start_audit', audit_id=audit.id) }}" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success" title="Start Audit"
+                                                    onclick="return confirm('Are you ready to start this audit?')">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% if audit.status == 'in_progress' %}
+                                        <a href="{{ url_for('auditor_create_finding', audit_id=audit.id) }}" 
+                                           class="btn btn-sm btn-warning" title="Add Finding">
+                                            <i class="fas fa-plus"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-clipboard text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="text-muted mt-3">No Audits Assigned</h4>
+                    <p class="text-muted">You don't have any audits assigned yet. Check back later or contact your supervisor.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

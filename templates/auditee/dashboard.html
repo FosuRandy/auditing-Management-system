@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Auditee Dashboard - Audit Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h2 mb-4">
+            <i class="fas fa-user-check me-2"></i>Auditee Dashboard
+            <small class="text-muted">- {{ current_user.full_name }}</small>
+        </h1>
+    </div>
+</div>
+
+<!-- Quick Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ stats.active_audits }}</h4>
+                        <p class="card-text">Active Audits</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ stats.pending_findings }}</h4>
+                        <p class="card-text">Pending Findings</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ stats.overdue_actions }}</h4>
+                        <p class="card-text">Overdue Actions</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ stats.completed_actions }}</h4>
+                        <p class="card-text">Completed Actions</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Findings -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Recent Findings Assigned to Me
+                </h5>
+                <a href="{{ url_for('auditee_findings') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye me-1"></i>View All
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_findings %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Finding ID</th>
+                                <th>Description</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for finding in recent_findings %}
+                            <tr>
+                                <td><code>{{ finding.reference_number }}</code></td>
+                                <td>
+                                    <strong>{{ finding.title[:50] }}{% if finding.title|length > 50 %}...{% endif %}</strong>
+                                    <br><small class="text-muted">{{ finding.audit.title }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if finding.severity == 'critical' else 'warning' if finding.severity == 'high' else 'info' if finding.severity == 'medium' else 'secondary' }}">
+                                        {{ finding.severity.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if finding.status == 'open' else 'info' if finding.status == 'in_progress' else 'success' if finding.status == 'resolved' else 'secondary' }}">
+                                        {{ finding.status.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ finding.due_date.strftime('%m/%d/%Y') if finding.due_date else '-' }}
+                                    {% if finding.due_date and finding.due_date < today %}
+                                    <br><small class="text-danger">Overdue</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('auditee_finding_detail', finding_id=finding.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-search text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No findings assigned yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Urgent Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-fire me-2"></i>Urgent Actions Required
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if urgent_actions %}
+                <div class="list-group list-group-flush">
+                    {% for action in urgent_actions %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ action.title }}</h6>
+                            <small class="text-danger">{{ action.days_remaining }} days left</small>
+                        </div>
+                        <p class="mb-1">{{ action.description[:100] }}{% if action.description|length > 100 %}...{% endif %}</p>
+                        <small class="text-muted">Due: {{ action.due_date.strftime('%m/%d/%Y') }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No urgent actions</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Links -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-link me-2"></i>Quick Links
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('auditee_findings') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-2"></i>My Findings
+                    </a>
+                    <a href="{{ url_for('auditee_corrective_actions') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-tasks me-2"></i>Corrective Actions
+                    </a>
+                    <a href="{{ url_for('auditee_evidence') }}" class="btn btn-outline-success">
+                        <i class="fas fa-file-upload me-2"></i>Upload Evidence
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Prepare Audit Plan{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <h2>Prepare Audit Plan</h2>
+            <p class="text-muted"><strong>Phase 2: Auditor Preparation</strong> - Review assignment and develop comprehensive audit plan</p>
+            
+            <!-- Status indicator -->
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Audit {{ audit.reference_number }}:</strong> {{ audit.title }}
+                <span class="badge bg-{{ 'success' if audit.status == 'acknowledged' else 'secondary' }} ms-2">{{ audit.status.replace('_', ' ').title() }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Assignment Review -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>Assignment Review
+                    </h5>
+                    <small class="text-muted">Review the supervisor's assignment details</small>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Audit Scope:</strong>
+                            <p class="text-muted">{{ audit.audit_scope or 'Not specified' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Audit Objectives:</strong>
+                            <p class="text-muted">{{ audit.audit_objectives or 'Not specified' }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Audit Criteria:</strong>
+                            <p class="text-muted">{{ audit.audit_criteria or 'Not specified' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Resources Available:</strong>
+                            <p class="text-muted">{{ audit.resources_needed or 'Not specified' }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Priority:</strong> <span class="badge bg-{{ 'danger' if audit.priority == 'critical' else 'warning' if audit.priority == 'high' else 'primary' }}">{{ audit.priority.title() }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Department:</strong> {{ audit.assigned_department.name if audit.assigned_department else 'Not specified' }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Timeline:</strong> {{ audit.planned_start_date.strftime('%m/%d/%Y') if audit.planned_start_date else 'TBD' }} - {{ audit.planned_end_date.strftime('%m/%d/%Y') if audit.planned_end_date else 'TBD' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Plan Form -->
+            <form method="POST" action="{{ url_for('auditor_submit_plan', audit_id=audit.id) }}">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-map me-2"></i>Audit Plan Development
+                        </h5>
+                        <small class="text-muted">Break down audit activities and methodology</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="audit_plan" class="form-label">Comprehensive Audit Plan *</label>
+                            <textarea class="form-control" id="audit_plan" name="audit_plan" rows="6" required 
+                                      placeholder="Describe your detailed audit plan including:
+- Key audit activities and phases
+- Timeline breakdown with milestones  
+- Resource allocation and team roles
+- Risk assessment approach
+- Sampling methodology (if applicable)">{{ audit.audit_plan or '' }}</textarea>
+                            <div class="form-text">Provide a detailed step-by-step plan that covers all audit phases from planning through reporting</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="audit_methodology" class="form-label">Audit Methodology *</label>
+                            <textarea class="form-control" id="audit_methodology" name="audit_methodology" rows="4" required 
+                                      placeholder="Describe your audit methodology:
+- Testing approaches (substantive, compliance, analytical)
+- Interview techniques and stakeholder engagement
+- Document review processes
+- Technology and tools to be used">{{ audit.audit_methodology or '' }}</textarea>
+                            <div class="form-text">Explain how you will conduct the audit to achieve the stated objectives</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="audit_checklist" class="form-label">Audit Checklist & Procedures</label>
+                            <textarea class="form-control" id="audit_checklist" name="audit_checklist" rows="5" 
+                                      placeholder="Create a detailed checklist:
+- Specific procedures to be performed
+- Controls to be tested
+- Compliance requirements to verify
+- Documentation to be reviewed">{{ audit.audit_checklist or '' }}</textarea>
+                            <div class="form-text">List specific audit procedures and checkpoints</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="data_request_list" class="form-label">Document & Data Request List</label>
+                            <textarea class="form-control" id="data_request_list" name="data_request_list" rows="5" 
+                                      placeholder="List documents and data needed from auditee (one per line):
+Policies and procedures manual
+Financial records for [period]
+System access logs
+Transaction data for [specific area]
+Organizational charts
+Previous audit reports">{{ audit.data_request_list or '' }}</textarea>
+                            <div class="form-text">These requests will be automatically sent to the auditee upon plan submission</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('auditor_audit_detail', audit_id=audit.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Audit Details
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-paper-plane me-1"></i>Submit Plan for Supervisor Approval
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Planning Guidance -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-1"></i>Planning Guidelines
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h6>Essential Plan Components</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Clear timeline with milestones</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Risk-based approach</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Sampling methodology</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Testing procedures</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Resource requirements</li>
+                    </ul>
+                    
+                    <h6>Before Fieldwork</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Get supervisor approval</li>
+                        <li class="mb-2"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Coordinate with auditee</li>
+                        <li class="mb-2"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Secure necessary access</li>
+                        <li class="mb-2"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Gather requested documents</li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if previous_audits %}
+            <!-- Previous Audits Reference -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-history me-1"></i>Previous Audits Reference
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Recent audits in {{ audit.assigned_department.name if audit.assigned_department else 'this area' }}:</p>
+                    {% for prev_audit in previous_audits %}
+                    <div class="border-bottom pb-2 mb-2">
+                        <div class="small">
+                            <strong>{{ prev_audit.title }}</strong><br>
+                            <span class="text-muted">{{ prev_audit.audit_type.title() }} • {{ prev_audit.created_at.strftime('%Y') }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <p class="small text-muted">Review previous findings and recommendations for context.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+}
+</style>
+{% endblock %}

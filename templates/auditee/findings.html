@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}My Findings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>My Assigned Findings</h2>
+            
+            {% if findings %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for finding in findings %}
+                                <tr>
+                                    <td>{{ finding.title }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if finding.severity == 'critical' else 'warning' if finding.severity == 'high' else 'info' }}">
+                                            {{ finding.severity.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if finding.status == 'resolved' else 'warning' }}">
+                                            {{ finding.status.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ finding.due_date.strftime('%Y-%m-%d') if finding.due_date else 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('auditee_finding_detail', finding_id=finding.id) }}" class="btn btn-sm btn-primary">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">No findings assigned to you yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Audit Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                <span class="badge bg-{{ 'success' if user.role == 'admin' else 'info' if user.role == 'supervisor' else 'warning' if user.role == 'auditor' else 'secondary' }} ms-2">
+                    {{ user.role.title() }}
+                </span>
+            </h1>
+            <div class="text-muted">
+                Welcome back, {{ user.full_name }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Total Audits</h5>
+                        <h2 class="mb-0">{{ stats.total_audits_year }}</h2>
+                        <small>This Year</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Risk Management</h5>
+                        <h2 class="mb-0">{{ stats.risk_score or 85 }}%</h2>
+                        <small>Risk Coverage</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Overdue Actions</h5>
+                        <h2 class="mb-0">{{ stats.overdue_actions }}</h2>
+                        <small>Need Attention</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if user.role == 'admin' %}
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Active Users</h5>
+                        <h2 class="mb-0">{{ total_users }}</h2>
+                        <small>{{ total_departments }} Departments</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row">
+    <!-- Audit Status Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Audits by Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="auditStatusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Findings -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>Top Recurring Findings
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if stats.top_findings %}
+                    {% for finding, count in stats.top_findings %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ finding or 'Uncategorized' }}</span>
+                        <span class="badge bg-secondary">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No findings data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    {% if user.role == 'auditor' and my_audits %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks me-2"></i>My Recent Audits
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for audit in my_audits %}
+                            <tr>
+                                <td>{{ audit.reference_number }}</td>
+                                <td>{{ audit.title }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if audit.status == 'closed' else 'primary' if audit.status == 'in_progress' else 'secondary' }}">
+                                        {{ audit.status.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if audit.priority == 'critical' else 'warning' if audit.priority == 'high' else 'info' if audit.priority == 'medium' else 'secondary' }}">
+                                        {{ audit.priority.title() }}
+                                    </span>
+                                </td>
+                                <td>{{ audit.planned_end_date.strftime('%m/%d/%Y') if audit.planned_end_date else '-' }}</td>
+                                <td>
+                                    <a href="{{ url_for('audit_detail', audit_id=audit.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if user.role == 'auditee' and assigned_audits %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Assigned Audits
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Auditor</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for audit in assigned_audits %}
+                            <tr>
+                                <td>{{ audit.reference_number }}</td>
+                                <td>{{ audit.title }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if audit.status == 'closed' else 'primary' if audit.status == 'in_progress' else 'secondary' }}">
+                                        {{ audit.status.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>{{ audit.auditor.full_name if audit.auditor else '-' }}</td>
+                                <td>{{ audit.planned_end_date.strftime('%m/%d/%Y') if audit.planned_end_date else '-' }}</td>
+                                <td>
+                                    <a href="{{ url_for('audit_detail', audit_id=audit.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if user.role == 'supervisor' and supervised_audits %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-eye me-2"></i>Supervised Audits
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Auditor</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for audit in supervised_audits %}
+                            <tr>
+                                <td>{{ audit.reference_number }}</td>
+                                <td>{{ audit.title }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if audit.status == 'closed' else 'primary' if audit.status == 'in_progress' else 'secondary' }}">
+                                        {{ audit.status.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>{{ audit.auditor.full_name if audit.auditor else '-' }}</td>
+                                <td>{{ audit.planned_end_date.strftime('%m/%d/%Y') if audit.planned_end_date else '-' }}</td>
+                                <td>
+                                    <a href="{{ url_for('audit_detail', audit_id=audit.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+    // Initialize dashboard charts
+    document.addEventListener('DOMContentLoaded', function() {
+        // Audit Status Chart
+        const auditStatusData = {{ stats.audits_by_status | tojson }};
+        createAuditStatusChart(auditStatusData);
+    });
+</script>
+{% endblock %}

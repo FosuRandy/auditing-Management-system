@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Detail - {{ audit.reference_number }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-clipboard-check me-2"></i>{{ audit.title }}
+            </h1>
+            <div>
+                <span class="badge bg-primary fs-6">{{ audit.reference_number }}</span>
+                <span class="badge bg-{{ 'success' if audit.status == 'plan_approved' else 'warning' if audit.status in ['plan_submitted', 'acknowledged'] else 'secondary' }} ms-2">
+                    {{ audit.status.replace('_', ' ').title() }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Workflow Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="workflow-progress">
+                    <div class="workflow-step {{ 'completed' if audit.status not in ['assigned'] else 'active' }}">
+                        <div class="step-icon">
+                            <i class="fas fa-{{ 'check' if audit.auditor_acknowledged_at else 'exclamation' }}"></i>
+                        </div>
+                        <div class="step-content">
+                            <h6>Assignment</h6>
+                            <small>{{ 'Acknowledged' if audit.auditor_acknowledged_at else 'Acknowledge audit assignment' }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-step {{ 'completed' if audit.status in ['plan_submitted', 'plan_approved', 'in_progress'] else 'active' if audit.status == 'acknowledged' else '' }}">
+                        <div class="step-icon">
+                            <i class="fas fa-{{ 'check' if audit.plan_submitted_at else 'map' }}"></i>
+                        </div>
+                        <div class="step-content">
+                            <h6>Planning</h6>
+                            <small>{{ 'Plan submitted' if audit.plan_submitted_at else 'Prepare audit plan' }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-step {{ 'completed' if audit.status in ['plan_approved', 'in_progress'] else 'active' if audit.status == 'plan_submitted' else '' }}">
+                        <div class="step-icon">
+                            <i class="fas fa-{{ 'check' if audit.plan_approved_at else 'gavel' }}"></i>
+                        </div>
+                        <div class="step-content">
+                            <h6>Approval</h6>
+                            <small>{{ 'Plan approved' if audit.plan_approved_at else 'Awaiting supervisor approval' }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-step {{ 'active' if audit.status == 'plan_approved' else '' }}">
+                        <div class="step-icon">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div class="step-content">
+                            <h6>Execution</h6>
+                            <small>Begin fieldwork</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Action Required Alert -->
+        {% if audit.status == 'assigned' %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Action Required:</strong> Please acknowledge this audit assignment to begin your preparation.
+            <form method="POST" action="{{ url_for('auditor_acknowledge_audit', audit_id=audit.id) }}" class="d-inline ms-3">
+                <button type="submit" class="btn btn-warning btn-sm">
+                    <i class="fas fa-check me-1"></i>Acknowledge Assignment
+                </button>
+            </form>
+        </div>
+        {% elif audit.status == 'acknowledged' %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Next Step:</strong> Prepare your comprehensive audit plan for supervisor review.
+            <a href="{{ url_for('auditor_prepare_plan', audit_id=audit.id) }}" class="btn btn-info btn-sm ms-3">
+                <i class="fas fa-edit me-1"></i>Prepare Plan
+            </a>
+        </div>
+        {% elif audit.status == 'plan_submitted' %}
+        <div class="alert alert-secondary">
+            <i class="fas fa-clock me-2"></i>
+            <strong>Plan Submitted:</strong> Your audit plan is under supervisor review. You'll be notified once approved or if changes are requested.
+        </div>
+        {% elif audit.status == 'plan_approved' %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>Plan Approved:</strong> You can now coordinate with the auditee and begin fieldwork.
+            {% if audit.supervisor_feedback %}
+            <div class="mt-2">
+                <strong>Supervisor Feedback:</strong>
+                <p class="mb-0">{{ audit.supervisor_feedback }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Audit Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Assignment Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Type:</strong> {{ audit.audit_type.replace('_', ' ').title() }}</p>
+                        <p><strong>Priority:</strong> 
+                            <span class="badge bg-{{ 'danger' if audit.priority == 'critical' else 'warning' if audit.priority == 'high' else 'primary' }}">
+                                {{ audit.priority.title() }}
+                            </span>
+                        </p>
+                        <p><strong>Department:</strong> {{ audit.assigned_department.name if audit.assigned_department else 'Not specified' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Planned Start:</strong> {{ audit.planned_start_date.strftime('%m/%d/%Y') if audit.planned_start_date else 'Not set' }}</p>
+                        <p><strong>Planned End:</strong> {{ audit.planned_end_date.strftime('%m/%d/%Y') if audit.planned_end_date else 'Not set' }}</p>
+                        <p><strong>Assigned:</strong> {{ audit.created_at.strftime('%m/%d/%Y') if audit.created_at else 'Unknown' }}</p>
+                    </div>
+                </div>
+                
+                {% if audit.description %}
+                <div class="mt-3">
+                    <strong>Description:</strong>
+                    <p class="text-muted">{{ audit.description }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Assignment Details (Phase 1) -->
+                {% if audit.audit_scope or audit.audit_objectives %}
+                <div class="mt-4">
+                    <h6><i class="fas fa-bullseye me-2"></i>Scope & Objectives</h6>
+                    {% if audit.audit_scope %}
+                    <div class="mb-3">
+                        <strong>Scope:</strong>
+                        <p class="text-muted">{{ audit.audit_scope }}</p>
+                    </div>
+                    {% endif %}
+                    {% if audit.audit_objectives %}
+                    <div class="mb-3">
+                        <strong>Objectives:</strong>
+                        <p class="text-muted">{{ audit.audit_objectives }}</p>
+                    </div>
+                    {% endif %}
+                    {% if audit.audit_criteria %}
+                    <div class="mb-3">
+                        <strong>Criteria:</strong>
+                        <p class="text-muted">{{ audit.audit_criteria }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Plan Details (if submitted) -->
+        {% if audit.audit_plan or audit.audit_methodology %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-map me-2"></i>Your Audit Plan
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if audit.audit_plan %}
+                <div class="mb-3">
+                    <h6>Plan Overview:</h6>
+                    <pre class="bg-light p-3 rounded" style="white-space: pre-wrap; font-family: inherit;">{{ audit.audit_plan }}</pre>
+                </div>
+                {% endif %}
+                {% if audit.audit_methodology %}
+                <div class="mb-3">
+                    <h6>Methodology:</h6>
+                    <pre class="bg-light p-3 rounded" style="white-space: pre-wrap; font-family: inherit;">{{ audit.audit_methodology }}</pre>
+                </div>
+                {% endif %}
+                {% if audit.supervisor_feedback %}
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-comment me-2"></i>Supervisor Feedback:</h6>
+                    <p class="mb-0">{{ audit.supervisor_feedback }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Findings (only show if audit is approved/in progress) -->
+        {% if audit.status in ['plan_approved', 'in_progress', 'review', 'closed'] %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Findings ({{ findings|length }})
+                </h5>
+                <a href="{{ url_for('auditor_create_finding', audit_id=audit.id) }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-2"></i>Add Finding
+                </a>
+            </div>
+            <div class="card-body">
+                {% if findings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Finding</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for finding in findings %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ finding.title }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ finding.description[:100] }}...</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if finding.severity == 'critical' else 'warning' if finding.severity == 'high' else 'info' }}">
+                                            {{ finding.severity.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if finding.status == 'resolved' else 'primary' if finding.status == 'in_progress' else 'secondary' }}">
+                                            {{ finding.status.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('auditor_finding_detail', finding_id=finding.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5>No Findings Yet</h5>
+                        <p class="text-muted">Document any findings as you conduct your audit.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Evidence Files -->
+        {% if audit.status in ['plan_approved', 'in_progress', 'review', 'closed'] %}
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-upload me-2"></i>Evidence Files ({{ evidence|length }})
+                </h5>
+                <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#uploadEvidenceModal">
+                    <i class="fas fa-upload me-2"></i>Upload Evidence
+                </button>
+            </div>
+            <div class="card-body">
+                {% if evidence %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>File</th>
+                                    <th>Description</th>
+                                    <th>Uploaded</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in evidence %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-file me-2"></i>{{ file.original_filename }}
+                                        <br>
+                                        <small class="text-muted">{{ (file.file_size / 1024 / 1024)|round(2) }} MB</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ file.description[:100] }}{% if file.description|length > 100 %}...{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        {{ file.uploaded_at.strftime('%m/%d/%Y') }}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('download_evidence', file_id=file.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download me-1"></i>Download
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
+                        <h5>No Evidence Files</h5>
+                        <p class="text-muted">Upload supporting documents and evidence for your audit.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if audit.status == 'assigned' %}
+                        <form method="POST" action="{{ url_for('auditor_acknowledge_audit', audit_id=audit.id) }}">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-check me-2"></i>Acknowledge Assignment
+                            </button>
+                        </form>
+                    {% elif audit.status == 'acknowledged' %}
+                        <a href="{{ url_for('auditor_prepare_plan', audit_id=audit.id) }}" class="btn btn-primary w-100">
+                            <i class="fas fa-edit me-2"></i>Prepare Audit Plan
+                        </a>
+                    {% elif audit.status == 'plan_submitted' %}
+                        <a href="{{ url_for('auditor_prepare_plan', audit_id=audit.id) }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-edit me-2"></i>Edit Plan
+                        </a>
+                    {% elif audit.status == 'plan_approved' %}
+                        <a href="{{ url_for('auditor_create_finding', audit_id=audit.id) }}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>Add Finding
+                        </a>
+                        <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#uploadEvidenceModal">
+                            <i class="fas fa-upload me-2"></i>Upload Evidence
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>Audit Team
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Lead Auditor:</strong><br>
+                    <small class="text-muted">{{ audit.auditor.full_name if audit.auditor else 'Not assigned' }} (You)</small>
+                </div>
+                {% if audit.auditee %}
+                <div class="mb-3">
+                    <strong>Primary Auditee:</strong><br>
+                    <small class="text-muted">{{ audit.auditee.full_name }}</small>
+                    {% if audit.auditee_acknowledged_at %}
+                    <span class="badge bg-success ms-2">Ready</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if audit.supervisor %}
+                <div class="mb-3">
+                    <strong>Supervisor:</strong><br>
+                    <small class="text-muted">{{ audit.supervisor.full_name }}</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <strong>Assigned:</strong> {{ audit.created_at.strftime('%m/%d/%Y') }}
+                    </div>
+                    {% if audit.auditor_acknowledged_at %}
+                    <div class="timeline-item">
+                        <strong>Acknowledged:</strong> {{ audit.auditor_acknowledged_at.strftime('%m/%d/%Y %I:%M %p') }}
+                    </div>
+                    {% endif %}
+                    {% if audit.plan_submitted_at %}
+                    <div class="timeline-item">
+                        <strong>Plan Submitted:</strong> {{ audit.plan_submitted_at.strftime('%m/%d/%Y %I:%M %p') }}
+                    </div>
+                    {% endif %}
+                    {% if audit.plan_approved_at %}
+                    <div class="timeline-item">
+                        <strong>Plan Approved:</strong> {{ audit.plan_approved_at.strftime('%m/%d/%Y %I:%M %p') }}
+                    </div>
+                    {% endif %}
+                    <div class="timeline-item">
+                        <strong>Target Start:</strong> {{ audit.planned_start_date.strftime('%m/%d/%Y') if audit.planned_start_date else 'TBD' }}
+                    </div>
+                    <div class="timeline-item">
+                        <strong>Target End:</strong> {{ audit.planned_end_date.strftime('%m/%d/%Y') if audit.planned_end_date else 'TBD' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Evidence Modal -->
+{% if audit.status in ['plan_approved', 'in_progress', 'review'] %}
+<div class="modal fade" id="uploadEvidenceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Evidence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('auditee_upload_evidence', audit_id=audit.id) }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="evidence_file" class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="evidence_file" name="evidence_file" required>
+                        <div class="form-text">Maximum file size: 16MB</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="evidence_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="evidence_description" name="evidence_description" rows="3" required
+                                  placeholder="Describe this evidence and its relevance to the audit..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.workflow-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.workflow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    position: relative;
+}
+
+.workflow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: 60%;
+    width: 80%;
+    height: 2px;
+    background-color: #dee2e6;
+    z-index: 0;
+}
+
+.workflow-step.completed:not(:last-child)::after {
+    background-color: #28a745;
+}
+
+.step-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.workflow-step.completed .step-icon {
+    background-color: #28a745;
+}
+
+.workflow-step.active .step-icon {
+    background-color: #007bff;
+}
+
+.step-content h6 {
+    font-size: 0.875rem;
+    margin-bottom: 2px;
+    color: #495057;
+}
+
+.step-content small {
+    color: #6c757d;
+    font-size: 0.75rem;
+}
+
+.timeline-item {
+    padding: 0.5rem 0;
+    border-left: 2px solid #dee2e6;
+    padding-left: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-item:last-child {
+    border-left-color: transparent;
+}
+</style>
+{% endblock %}

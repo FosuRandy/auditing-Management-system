@@ -1,0 +1,57 @@
+Here’s a clear, step-by-step procedure of how the audit management should typically flow from a supervisor assigning it to an auditor interaction with auditee tailored for an internal corporate audit process (like in your telecom audit management system).
+
+1. Audit Assignment Phase
+Supervisor’s Role
+Identify the Need for an Audit
+Trigger: Scheduled (annual/quarterly), risk-based, or ad hoc request from management/regulators.
+
+Define Audit Scope & Objectives
+What’s being audited (process, department, system)?
+Purpose (compliance, performance, fraud detection, etc.).
+Select an Auditor or Audit Team
+Match auditor’s expertise to audit subject.
+Avoid conflicts of interest.
+Assign the Audit in the System
+Enter assignment into the AMS (Audit Management System).
+
+Provide:
+scope & objectives
+Audit criteria & standards
+Expected start and end dates
+Resources & tools needed
+Send Notification to Auditor
+System automatically sends email/system alert to the assigned auditor.
+
+2. Auditor’s Preparation Phase
+Auditor’s Role
+Acknowledge Assignment
+Confirm receipt of task in the system.
+Review the Scope & Objectives
+Understand exactly what needs to be audited.
+Review Background Information
+Gather previous audit reports, incident logs, risk registers, regulatory requirements.
+
+Develop the Audit Plan
+Break down the audit into activities and timeline.
+Prepare audit checklists, sampling plans, and data request lists
+Coordinate with Auditee
+Notify auditee of planned audit date and requirements.
+Request necessary documents and access permissions in advance.
+
+3. Pre-Audit Planning & Approval
+Supervisor’s Role
+Review Auditor’s Plan
+Check that scope, methodology, and timelines align with objectives.
+Approve or Request Changes
+Approval triggers readiness for fieldwork.
+
+Auditee → Auditor (Information & Access Provision)
+Receive Audit Notification
+Acknowledge planned audit date and requirements.
+Prepare Required Documents
+Submit requested policies, procedures, logs, transaction data.
+Arrange Access
+Ensure auditor has physical/system access to relevant locations or platforms.
+Respond to Clarifications
+Answer any preliminary queries from auditor.
+

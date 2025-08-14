@@ -1,0 +1,50 @@
+Core Modules to Include
+
+Here are the essential components the system should probably have:
+
+| Module                    | Description                                                  |
+|-------------------------- | ------------------------------------------------------------ |
+| User Management           | Roles: Admin, Auditor, Auditee, Supervisor                   |
+| Audit Planning            | Define audit scope, objectives, timelines, responsible teams |
+| Audit Execution           | Checklist execution, data collection, evidence uploads       |
+| Findings & Observations   | Log findings, assign severity and owners                     |
+| Corrective Actions        | Define action plans, track status, set deadlines             |
+| Document Management       | Upload supporting evidence, templates, reports               |
+| Dashboard & Reporting     | KPI tracking, audit status summaries, compliance scores      |
+| Notifications & Reminders | Alerts for due audits, overdue actions, approvals            |
+
+
+
+
+Security & Access Control
+
+* Use Role-Based Access Control (RBAC).
+* Ensure audit trails (who did what, when).
+* Use 2FA or SSO (if integrating with company login systems).
+* Encrypt sensitive audit data.
+
+
+
+Sample Dashboard
+
+* Total Audits This Year / Quarter
+* Audits by Status (Planned, In Progress, Closed)
+* Top 5 Recurring Findings
+* SLA Adherence % (e.g., overdue action plans)
+* Risk Scores (per department or audit type)
+
+
+Workflow Example
+
+
+1. Admin creates audit template → assigns to Auditor
+2. Auditor fills out checklist, uploads evidence
+3. System logs findings → auto-assigns to Auditee
+4. Auditee proposes corrective actions
+5. Supervisor reviews → marks audit closed
+6. Reports auto-generated and stored
+
+
+
+when someone searches the application on the web. the landing should be the role base user access. so the it should be "login as supervisor, login as auditor,login as auditee, login as admin". the user shall click on one of them for the login page to appear.
+the admin should be able to add and remove departments, department units, auditors,auditees. if the admin adds new auditor, auditee, or supervisor, an auto generated password to should generated for first login, and if the auditor,auditee,or supervisor logs in with the auto generated password, he should be forced to change the password to their own.

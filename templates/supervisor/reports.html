@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Supervisor Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Supervised Audit Reports</h2>
+            
+            {% if audits %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Title</th>
+                                    <th>Auditor</th>
+                                    <th>Status</th>
+                                    <th>Start Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for audit in audits %}
+                                <tr>
+                                    <td>{{ audit.reference_number }}</td>
+                                    <td>{{ audit.title }}</td>
+                                    <td>{{ audit.auditor.full_name if audit.auditor else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if audit.status == 'completed' else 'warning' }}">
+                                            {{ audit.status.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ audit.planned_start_date.strftime('%Y-%m-%d') if audit.planned_start_date else 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('audit_detail', audit_id=audit.id) }}" class="btn btn-sm btn-primary">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">No supervised audits yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
