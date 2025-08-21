@@ -1,321 +1,276 @@
-{% extends "base.html" %}
-{% block title %}Director Dashboard{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Director Dashboard - Audit Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-crown mr-2"></i> Director Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
 
-{% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12 mb-4">
-            <h2>Director Dashboard</h2>
-            <p class="text-muted">Review and approve audit plans submitted by Head of Business Control</p>
-        </div>
-    </div>
-    
-    <!-- Quick Stats -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Total Audits</h5>
-                            <h2 class="mb-0">{{ total_audits_count or 0 }}</h2>
-                            <small>Organization Wide</small>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
-                        </div>
+    <div class="container-fluid mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card bg-warning text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Pending Approval</h5>
-                            <h2 class="mb-0">{{ plans_pending_count or 0 }}</h2>
-                            <small>Action Required</small>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-gavel fa-2x opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Plans Approved</h5>
-                            <h2 class="mb-0">{{ approved_plans_count or 0 }}</h2>
-                            <small>This Period</small>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">Active Audits</h5>
-                            <h2 class="mb-0">{{ active_audits_count or 0 }}</h2>
-                            <small>In Progress</small>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-8">
-            <!-- Plans Pending Director Approval -->
-            {% if plans_pending_approval %}
-            <div class="card mb-4 border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-gavel me-2"></i>Audit Plans Awaiting Your Approval ({{ plans_pending_count }})
-                        <span class="badge bg-dark ms-2">Action Required</span>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Audit Plan</th>
-                                    <th>Submitted By</th>
-                                    <th>Submitted Date</th>
-                                    <th>Priority</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for audit in plans_pending_approval %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ audit.title }}</strong><br>
-                                        <small class="text-muted">{{ audit.reference_number }}</small>
-                                    </td>
-                                    <td>{{ audit.head_of_business_control.full_name if audit.head_of_business_control else 'Unknown' }}</td>
-                                    <td>{{ audit.plan_submitted_at.strftime('%m/%d/%Y %I:%M %p') if audit.plan_submitted_at else 'N/A' }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'danger' if audit.priority == 'critical' else 'warning' if audit.priority == 'high' else 'primary' }}">
-                                            {{ audit.priority.title() }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('director_approve_plan', audit_id=audit.id) }}" 
-                                           class="btn btn-sm btn-warning">
-                                            <i class="fas fa-gavel me-1"></i>Review & Approve
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+                {% endfor %}
             {% endif %}
-            
-            <!-- Recently Approved Plans -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-check-circle me-2"></i>Recently Approved Plans
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if recently_approved %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Audit Plan</th>
-                                    <th>Head of Business Control</th>
-                                    <th>Approved Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for audit in recently_approved %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ audit.title }}</strong><br>
-                                        <small class="text-muted">{{ audit.reference_number }}</small>
-                                    </td>
-                                    <td>{{ audit.head_of_business_control.full_name if audit.head_of_business_control else 'Unknown' }}</td>
-                                    <td>{{ audit.director_approved_at.strftime('%m/%d/%Y') if audit.director_approved_at else 'N/A' }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'success' if audit.status == 'auditor_assigned' else 'primary' if audit.status == 'pending_auditor_assignment' else 'secondary' }}">
-                                            {{ audit.status.replace('_', ' ').title() }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('audit_detail', audit_id=audit.id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye me-1"></i>View
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
-                        <h5>No Recent Approvals</h5>
-                        <p class="text-muted">No audit plans have been approved recently.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- All Organizational Audits Overview -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-building me-2"></i>Organizational Audit Overview
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if all_audits %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Audit</th>
-                                    <th>Department</th>
-                                    <th>Status</th>
-                                    <th>Head of Business Control</th>
-                                    <th>Auditor</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for audit in all_audits[:10] %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ audit.title }}</strong><br>
-                                        <small class="text-muted">{{ audit.reference_number }}</small>
-                                    </td>
-                                    <td>{{ audit.assigned_department.name if audit.assigned_department else 'N/A' }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'success' if audit.status == 'completed' else 'primary' if audit.status == 'in_progress' else 'warning' if 'pending' in audit.status else 'secondary' }}">
-                                            {{ audit.status.replace('_', ' ').title() }}
-                                        </span>
-                                    </td>
-                                    <td>{{ audit.head_of_business_control.full_name if audit.head_of_business_control else 'N/A' }}</td>
-                                    <td>{{ audit.auditor.full_name if audit.auditor else 'Not assigned' }}</td>
-                                    <td>
-                                        <a href="{{ url_for('audit_detail', audit_id=audit.id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye me-1"></i>View
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% if all_audits|length > 10 %}
-                    <div class="text-center mt-3">
-                        <a href="{{ url_for('audit_list') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-list me-2"></i>View All Audits ({{ all_audits|length }})
-                        </a>
-                    </div>
-                    {% endif %}
-                    {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
-                        <h5>No Audits Found</h5>
-                        <p class="text-muted">No audits have been created in the organization yet.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <!-- Quick Actions -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-lightning me-2"></i>Quick Actions
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        {% if plans_pending_count > 0 %}
-                        <a href="#" onclick="scrollToPendingApprovals()" class="btn btn-warning">
-                            <i class="fas fa-gavel me-2"></i>Review Plans ({{ plans_pending_count }})
-                        </a>
-                        {% endif %}
-                        <a href="{{ url_for('audit_list') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-list me-2"></i>View All Audits
-                        </a>
-                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-info">
-                            <i class="fas fa-users me-2"></i>Manage Users
-                        </a>
-                        <a href="{{ url_for('admin_departments') }}" class="btn btn-outline-info">
-                            <i class="fas fa-building me-2"></i>Manage Departments
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Recent Activities -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-clock me-2"></i>Recent System Activity
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if recent_activities %}
-                    <div class="list-group list-group-flush">
-                        {% for activity in recent_activities %}
-                        <div class="list-group-item px-0">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">{{ activity.action }}</h6>
-                                    <p class="mb-1 small text-muted">{{ activity.details }}</p>
-                                    <small class="text-muted">{{ activity.created_at.strftime('%m/%d %H:%M') }}</small>
-                                </div>
+        {% endwith %}
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Approvals</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pending_approvals }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
-                    {% else %}
-                    <p class="text-muted text-center py-3">No recent activity</p>
-                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Completed Audits</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.completed_audits }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Risks</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_risks }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-danger shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">High Risks</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.high_risks }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-fire fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Pending Approvals -->
+            <div class="col-xl-6 col-lg-7">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Audit Plans Pending Approval</h6>
+                        <span class="badge bg-warning">{{ pending_audits|length }}</span>
+                    </div>
+                    <div class="card-body">
+                        {% if pending_audits %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Audit Title</th>
+                                            <th>Department</th>
+                                            <th>Priority</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for audit in pending_audits %}
+                                        <tr>
+                                            <td>{{ audit.title }}</td>
+                                            <td>{{ audit.get('department_name', 'N/A') }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'danger' if audit.priority == 'high' else 'warning' if audit.priority == 'medium' else 'secondary' }}">
+                                                    {{ audit.priority.title() }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-success btn-sm" onclick="approveAudit('{{ audit.id }}')">
+                                                    <i class="fas fa-check mr-1"></i> Approve
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No audit plans pending approval</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Heatmap -->
+            <div class="col-xl-6 col-lg-5">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Risk Heatmap Overview</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="riskHeatmapChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ url_for('risk_assessment') }}" class="btn btn-outline-primary btn-block">
+                                    <i class="fas fa-chart-bar mr-2"></i> View Risk Assessment
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ url_for('audit_planning') }}" class="btn btn-outline-info btn-block">
+                                    <i class="fas fa-calendar-alt mr-2"></i> View Audit Plans
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ url_for('report_library') }}" class="btn btn-outline-success btn-block">
+                                    <i class="fas fa-file-pdf mr-2"></i> Report Library
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ url_for('manage_users') }}" class="btn btn-outline-secondary btn-block">
+                                    <i class="fas fa-users mr-2"></i> Manage Users
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-function scrollToPendingApprovals() {
-    document.querySelector('.border-warning').scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-    });
-}
-</script>
-{% endblock %}
+    <!-- Approval Modal -->
+    <div class="modal fade" id="approvalModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Approve Audit Plan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" id="approvalForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="director_feedback" class="form-label">Director Feedback (Optional)</label>
+                            <textarea class="form-control" id="director_feedback" name="director_feedback" rows="3" placeholder="Add any feedback or comments..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check mr-1"></i> Approve Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function approveAudit(auditId) {
+            const approvalForm = document.getElementById('approvalForm');
+            approvalForm.action = `/director/approve-audit/${auditId}`;
+            
+            const modal = new bootstrap.Modal(document.getElementById('approvalModal'));
+            modal.show();
+        }
+
+        // Initialize risk heatmap chart
+        const ctx = document.getElementById('riskHeatmapChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Low Risk', 'Medium Risk', 'High Risk', 'Critical Risk'],
+                datasets: [{
+                    data: [
+                        {{ risks|selectattr('risk_level', 'equalto', 'low')|list|length }},
+                        {{ risks|selectattr('risk_level', 'equalto', 'medium')|list|length }},
+                        {{ risks|selectattr('risk_level', 'equalto', 'high')|list|length }},
+                        {{ risks|selectattr('risk_level', 'equalto', 'critical')|list|length }}
+                    ],
+                    backgroundColor: ['#28a745', '#ffc107', '#fd7e14', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+
+    <style>
+    .border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+    .border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+    .border-left-info { border-left: 0.25rem solid #36b9cc !important; }
+    .border-left-warning { border-left: 0.25rem solid #f6c23e !important; }
+    .border-left-danger { border-left: 0.25rem solid #e74a3b !important; }
+    .text-xs { font-size: 0.7rem; }
+    </style>
+</body>
+</html>

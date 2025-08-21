@@ -1,102 +1,84 @@
-{% extends "base.html" %}
-
-{% block title %}Login - Audit Management System{% endblock %}
-
-{% block content %}
-<div class="landing-container">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-primary">
     <div class="container">
-        <div class="row justify-content-center min-vh-100 align-items-center">
-            <div class="col-lg-8">
-                <div class="text-center mb-5">
-                    <div class="landing-logo mb-4">
-                        <i class="fas fa-clipboard-check fa-5x text-primary"></i>
-                    </div>
-                    <h1 class="display-4 fw-bold text-primary mb-3">Audit Management System</h1>
-                    <p class="lead text-muted">Professional audit management with role-based access control</p>
-                </div>
-                
-                <div class="row g-4">
-                    <!-- Admin Login -->
-                    <div class="col-md-6 col-lg-3">
-                        <div class="role-card admin-card h-100">
-                            <div class="card border-0 shadow-lg h-100">
-                                <div class="card-body text-center p-4">
-                                    <div class="role-icon mb-3">
-                                        <i class="fas fa-user-shield fa-3x text-success"></i>
+        <div class="row justify-content-center">
+            <div class="col-xl-10 col-lg-12 col-md-9">
+                <div class="card o-hidden border-0 shadow-lg my-5">
+                    <div class="card-body p-0">
+                        <div class="row">
+                            <div class="col-lg-6 d-none d-lg-block bg-login-image">
+                                <div class="p-5">
+                                    <div class="text-center">
+                                        <h1 class="h4 text-gray-900 mb-4">Audit Management System</h1>
+                                        <p class="lead">Comprehensive audit management with Firebase integration</p>
+                                        <i class="fas fa-clipboard-check fa-5x text-primary mb-4"></i>
                                     </div>
-                                    <h4 class="card-title text-success mb-3">Administrator</h4>
-                                    <p class="card-text text-muted mb-4">Full system access and user management</p>
-                                    <a href="{{ url_for('login_form', role='admin') }}" class="btn btn-success btn-lg w-100">
-                                        <i class="fas fa-sign-in-alt me-2"></i>Login as Admin
-                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="p-5">
+                                    <div class="text-center">
+                                        <h1 class="h4 text-gray-900 mb-4">Select Your Role</h1>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <a href="{{ url_for('login_form', role='director') }}" class="btn btn-primary btn-user btn-block">
+                                                <i class="fas fa-crown mr-2"></i> Director
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <a href="{{ url_for('login_form', role='head_of_business_control') }}" class="btn btn-success btn-user btn-block">
+                                                <i class="fas fa-users-cog mr-2"></i> Head of Business Control
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <a href="{{ url_for('login_form', role='auditor') }}" class="btn btn-info btn-user btn-block">
+                                                <i class="fas fa-search mr-2"></i> Auditor
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <a href="{{ url_for('login_form', role='auditee') }}" class="btn btn-warning btn-user btn-block">
+                                                <i class="fas fa-file-alt mr-2"></i> Auditee
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-center mt-4">
+                                        <p class="text-muted small">Enhanced with Firebase authentication and real-time features</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Supervisor Login -->
-                    <div class="col-md-6 col-lg-3">
-                        <div class="role-card supervisor-card h-100">
-                            <div class="card border-0 shadow-lg h-100">
-                                <div class="card-body text-center p-4">
-                                    <div class="role-icon mb-3">
-                                        <i class="fas fa-user-tie fa-3x text-info"></i>
-                                    </div>
-                                    <h4 class="card-title text-info mb-3">Supervisor</h4>
-                                    <p class="card-text text-muted mb-4">Audit oversight and approval authority</p>
-                                    <a href="{{ url_for('login_form', role='supervisor') }}" class="btn btn-info btn-lg w-100">
-                                        <i class="fas fa-sign-in-alt me-2"></i>Login as Supervisor
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Auditor Login -->
-                    <div class="col-md-6 col-lg-3">
-                        <div class="role-card auditor-card h-100">
-                            <div class="card border-0 shadow-lg h-100">
-                                <div class="card-body text-center p-4">
-                                    <div class="role-icon mb-3">
-                                        <i class="fas fa-search fa-3x text-warning"></i>
-                                    </div>
-                                    <h4 class="card-title text-warning mb-3">Auditor</h4>
-                                    <p class="card-text text-muted mb-4">Conduct audits and document findings</p>
-                                    <a href="{{ url_for('login_form', role='auditor') }}" class="btn btn-warning btn-lg w-100">
-                                        <i class="fas fa-sign-in-alt me-2"></i>Login as Auditor
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Auditee Login -->
-                    <div class="col-md-6 col-lg-3">
-                        <div class="role-card auditee-card h-100">
-                            <div class="card border-0 shadow-lg h-100">
-                                <div class="card-body text-center p-4">
-                                    <div class="role-icon mb-3">
-                                        <i class="fas fa-user-check fa-3x text-secondary"></i>
-                                    </div>
-                                    <h4 class="card-title text-secondary mb-3">Auditee</h4>
-                                    <p class="card-text text-muted mb-4">Subject to audits and corrective actions</p>
-                                    <a href="{{ url_for('login_form', role='auditee') }}" class="btn btn-secondary btn-lg w-100">
-                                        <i class="fas fa-sign-in-alt me-2"></i>Login as Auditee
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="text-center mt-5">
-                    <p class="text-muted">
-                        <i class="fas fa-shield-alt me-1"></i>
-                        Secure role-based access control with comprehensive audit trails
-                    </p>
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    .btn-user {
+        font-size: 0.8rem;
+        border-radius: 10rem;
+        padding: 0.75rem 1rem;
+    }
+    .bg-login-image {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    </style>
+</body>
+</html>

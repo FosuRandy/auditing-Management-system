@@ -1,67 +1,69 @@
 import os
 import logging
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
+from firebase_config import firebase_config
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
-
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
 
 # create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "audit-management-fallback-key-2025")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
+# Firebase configuration
+app.config['FIREBASE_CONFIG'] = firebase_config
 
 # File upload configuration
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# initialize the app with the extension
-db.init_app(app)
-
-# Initialize database and create tables
-def init_database():
-    with app.app_context():
-        # Import models to ensure tables are created
-        import models  # noqa: F401
-        db.create_all()
+# Initialize Firebase and create default data
+def init_firebase():
+    """Initialize Firebase with default data"""
+    try:
+        from firebase_models import UserModel, DepartmentModel
         
-        # Create default admin user if none exists
-        from models import User
-        from werkzeug.security import generate_password_hash
+        # Initialize models
+        user_model = UserModel()
+        dept_model = DepartmentModel()
         
-        try:
-            admin = User.query.filter_by(username='admin').first()
-            if not admin:
-                admin_user = User()
-                admin_user.username = 'admin'
-                admin_user.email = 'admin@audit.system'
-                admin_user.password_hash = generate_password_hash('admin123')
-                admin_user.role = 'admin'
-                admin_user.first_name = 'System'
-                admin_user.last_name = 'Administrator'
-                admin_user.is_active = True
-                admin_user.password_reset_required = False
-                
-                db.session.add(admin_user)
-                db.session.commit()
-                logging.info("Default admin user created: admin/admin123")
-        except Exception as e:
-            logging.error(f"Error creating admin user: {str(e)}")
-            db.session.rollback()
+        # Create default admin user
+        admin_email = 'admin@audit.system'
+        existing_admin = user_model.get_user_by_email(admin_email)
+        
+        if not existing_admin:
+            admin_data = {
+                'email': admin_email,
+                'role': 'director',
+                'first_name': 'System',
+                'last_name': 'Administrator',
+                'username': 'admin',
+                'phone': '+1-555-0001',
+                'is_active': True,
+                'password_reset_required': False
+            }
+            user_model.create_user(admin_data)
+            logging.info("Default admin user created in Firebase")
+        
+        # Create default departments
+        default_departments = [
+            {'name': 'Internal Audit', 'description': 'Internal audit department'},
+            {'name': 'Finance', 'description': 'Finance and accounting department'},
+            {'name': 'Operations', 'description': 'Operations department'},
+            {'name': 'IT', 'description': 'Information technology department'},
+            {'name': 'Human Resources', 'description': 'Human resources department'}
+        ]
+        
+        existing_depts = dept_model.get_all()
+        if not existing_depts:
+            for dept_data in default_departments:
+                dept_model.create_department(dept_data)
+            logging.info("Default departments created in Firebase")
+            
+    except Exception as e:
+        logging.error(f"Error initializing Firebase data: {str(e)}")
 
-# Initialize database when app starts
-init_database()
+# Initialize Firebase data when app starts
+# Sample data will be initialized by data_store.py automatically
