@@ -137,7 +137,7 @@
                                             </td>
                                             <td>{{ audit.get('auditor_name', 'Not assigned') }}</td>
                                             <td>
-                                                <a href="{{ url_for('audit_response', audit_id=audit.id) }}" class="btn btn-primary btn-sm">
+                                                <a href="{{ url_for('corrective_actions') }}?audit_id={{ audit.id }}" class="btn btn-primary btn-sm">
                                                     <i class="fas fa-reply mr-1"></i> Respond
                                                 </a>
                                             </td>
@@ -254,7 +254,7 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <a href="{{ url_for('corrective_action_detail', action_id=action.id) }}" class="btn btn-primary btn-sm">
+                                                <a href="{{ url_for('corrective_actions') }}?action_id={{ action.id }}" class="btn btn-primary btn-sm">
                                                     <i class="fas fa-edit mr-1"></i> Update
                                                 </a>
                                             </td>

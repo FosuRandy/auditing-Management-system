@@ -140,10 +140,10 @@
                                             </td>
                                             <td>{{ audit.get('due_date', 'Not set') }}</td>
                                             <td>
-                                                <a href="{{ url_for('audit_execution_detail', audit_id=audit.id) }}" class="btn btn-primary btn-sm">
+                                                <a href="{{ url_for('audit_execution') }}?audit_id={{ audit.id }}" class="btn btn-primary btn-sm">
                                                     <i class="fas fa-eye mr-1"></i> View
                                                 </a>
-                                                <a href="{{ url_for('create_finding', audit_id=audit.id) }}" class="btn btn-warning btn-sm">
+                                                <a href="{{ url_for('findings') }}?audit_id={{ audit.id }}" class="btn btn-warning btn-sm">
                                                     <i class="fas fa-plus mr-1"></i> Add Finding
                                                 </a>
                                             </td>
@@ -243,7 +243,7 @@
                                             <td>{{ finding.get('audit_title', 'Unknown Audit') }}</td>
                                             <td>{{ finding.get('created_at', 'Unknown').strftime('%Y-%m-%d') if finding.get('created_at') else 'Unknown' }}</td>
                                             <td>
-                                                <a href="{{ url_for('finding_detail', finding_id=finding.id) }}" class="btn btn-info btn-sm">
+                                                <a href="{{ url_for('findings') }}?finding_id={{ finding.id }}" class="btn btn-info btn-sm">
                                                     <i class="fas fa-eye mr-1"></i> View
                                                 </a>
                                             </td>
