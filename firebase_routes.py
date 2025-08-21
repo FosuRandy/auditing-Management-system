@@ -290,8 +290,8 @@ def auditee_dashboard():
 @role_required('head_of_business_control', 'director')
 def risk_assessment():
     """Risk assessment management"""
-    risks = risk_model.get_all()
-    departments = dept_model.get_all()
+    risks = list(DATA_STORE['risks'].values())
+    departments = list(DATA_STORE['departments'].values())
     
     return render_template('risk_assessment.html', risks=risks, departments=departments)
 
@@ -312,7 +312,10 @@ def create_risk_assessment():
                 'created_by': get_current_user()['id']
             }
             
-            risk_id = risk_model.create_risk(risk_data)
+            risk_id = str(uuid.uuid4())
+            risk_data['id'] = risk_id
+            risk_data['created_at'] = datetime.now()
+            DATA_STORE['risks'][risk_id] = risk_data
             log_audit_action('create', 'risk_assessment', risk_id, 'Risk assessment created')
             
             flash('Risk assessment created successfully.', 'success')
@@ -321,7 +324,7 @@ def create_risk_assessment():
         except Exception as e:
             flash(f'Error creating risk assessment: {str(e)}', 'error')
     
-    departments = dept_model.get_all()
+    departments = list(DATA_STORE['departments'].values())
     return render_template('create_risk_assessment.html', departments=departments)
 
 # Audit Planning Routes
@@ -330,9 +333,9 @@ def create_risk_assessment():
 @role_required('head_of_business_control', 'director')
 def audit_planning():
     """Audit planning interface"""
-    audits = audit_model.get_all()
-    risks = risk_model.get_all()
-    departments = dept_model.get_all()
+    audits = list(DATA_STORE['audits'].values())
+    risks = list(DATA_STORE['risks'].values())
+    departments = list(DATA_STORE['departments'].values())
     
     return render_template('audit_planning.html', audits=audits, risks=risks, departments=departments)
 
@@ -357,7 +360,10 @@ def create_audit_plan():
                 'status': 'draft'
             }
             
-            audit_id = audit_model.create_audit(audit_data)
+            audit_id = str(uuid.uuid4())
+            audit_data['id'] = audit_id
+            audit_data['created_at'] = datetime.now()
+            DATA_STORE['audits'][audit_id] = audit_data
             log_audit_action('create', 'audit', audit_id, 'Audit plan created')
             
             flash('Audit plan created successfully.', 'success')
@@ -366,8 +372,8 @@ def create_audit_plan():
         except Exception as e:
             flash(f'Error creating audit plan: {str(e)}', 'error')
     
-    departments = dept_model.get_all()
-    risks = risk_model.get_all()
+    departments = list(DATA_STORE['departments'].values())
+    risks = list(DATA_STORE['risks'].values())
     return render_template('create_audit_plan.html', departments=departments, risks=risks)
 
 @app.route('/audit-planning/<audit_id>/submit-for-approval', methods=['POST'])
@@ -381,7 +387,8 @@ def submit_audit_for_approval(audit_id):
             'plan_submitted_at': datetime.now().isoformat()
         }
         
-        audit_model.update(audit_id, audit_data)
+        if audit_id in DATA_STORE['audits']:
+            DATA_STORE['audits'][audit_id].update(audit_data)
         log_audit_action('submit_for_approval', 'audit', audit_id, 'Audit plan submitted for director approval')
         
         flash('Audit plan submitted for Director approval.', 'success')
@@ -403,7 +410,8 @@ def approve_audit_plan(audit_id):
             'director_feedback': request.form.get('director_feedback', '')
         }
         
-        audit_model.update(audit_id, audit_data)
+        if audit_id in DATA_STORE['audits']:
+            DATA_STORE['audits'][audit_id].update(audit_data)
         log_audit_action('approve', 'audit', audit_id, 'Audit plan approved by director')
         
         flash('Audit plan approved successfully.', 'success')
@@ -426,7 +434,7 @@ def assign_auditor(audit_id):
             'auditor_assigned_at': datetime.now().isoformat()
         }
         
-        audit_model.update(audit_id, audit_data)
+        if audit_id in DATA_STORE['audits']: DATA_STORE['audits'][audit_id].update(audit_data)
         log_audit_action('assign_auditor', 'audit', audit_id, f'Auditor assigned to audit')
         
         flash('Auditor assigned successfully.', 'success')
@@ -444,8 +452,8 @@ def messages():
     user = get_current_user()
     
     # Get messages for current user
-    received_messages = message_model.query('recipient_id', '==', user['id'])
-    sent_messages = message_model.query('sender_id', '==', user['id'])
+    received_messages = [msg for msg in DATA_STORE['messages'].values() if msg.get('recipient_id') == user['id']]
+    sent_messages = [msg for msg in DATA_STORE['messages'].values() if msg.get('sender_id') == user['id']]
     
     return render_template('messages.html', 
                          received_messages=received_messages,
@@ -525,7 +533,7 @@ def generate_audit_report(audit_id):
             flash('Audit not found.', 'error')
             return redirect(url_for('dashboard'))
         
-        findings = finding_model.get_findings_by_audit(audit_id)
+        findings = [f for f in DATA_STORE['findings'].values() if f.get('audit_id') == audit_id]
         evidence = evidence_model.query('audit_id', '==', audit_id)
         
         # Create PDF report
@@ -605,8 +613,8 @@ def generate_audit_report(audit_id):
 @role_required('director', 'head_of_business_control', 'auditor')
 def report_library():
     """Central report library"""
-    reports = report_model.get_all()
-    audits = audit_model.get_all()
+    reports = list(DATA_STORE['reports'].values())
+    audits = list(DATA_STORE['audits'].values())
     
     # Create audit lookup for report details
     audit_lookup = {audit['id']: audit for audit in audits}
@@ -620,7 +628,7 @@ def report_library():
 def manage_users():
     """User management"""
     users = user_model.get_all()
-    departments = dept_model.get_all()
+    departments = list(DATA_STORE['departments'].values())
     
     return render_template('user_management.html', users=users, departments=departments)
 
@@ -673,7 +681,7 @@ def create_user():
 @role_required('head_of_business_control', 'director')
 def manage_departments():
     """Department management"""
-    departments = dept_model.get_all()
+    departments = list(DATA_STORE['departments'].values())
     return render_template('department_management.html', departments=departments)
 
 @app.route('/departments/create', methods=['POST'])
@@ -688,7 +696,10 @@ def create_department():
             'head_name': request.form.get('head_name', '')
         }
         
-        dept_id = dept_model.create_department(dept_data)
+        dept_id = str(uuid.uuid4())
+        dept_data['id'] = dept_id
+        dept_data['created_at'] = datetime.now()
+        DATA_STORE['departments'][dept_id] = dept_data
         log_audit_action('create', 'department', dept_id, f'Department created: {request.form["name"]}')
         
         flash('Department created successfully.', 'success')
@@ -703,15 +714,15 @@ def create_department():
 @login_required
 def get_audit_findings(audit_id):
     """Get findings for an audit (API)"""
-    findings = finding_model.get_findings_by_audit(audit_id)
+    findings = [f for f in DATA_STORE['findings'].values() if f.get('audit_id') == audit_id]
     return jsonify({'findings': findings})
 
 @app.route('/api/risk-heatmap')
 @login_required
 def risk_heatmap_data():
     """Get risk data for heatmap"""
-    risks = risk_model.get_all()
-    departments = dept_model.get_all()
+    risks = list(DATA_STORE['risks'].values())
+    departments = list(DATA_STORE['departments'].values())
     
     # Create department lookup
     dept_lookup = {dept['id']: dept['name'] for dept in departments}
