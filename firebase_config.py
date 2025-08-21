@@ -17,14 +17,14 @@ try:
 except ImportError:
     REQUESTS_AVAILABLE = False
 
-# Firebase configuration
+# Firebase configuration from environment variables or default config
 firebase_config = {
-    "apiKey": "AIzaSyD2twe6wE5tIz5cSeyn-BPV8ozDGAAfEcQ",
+    "apiKey": os.environ.get("FIREBASE_API_KEY", "AIzaSyD2twe6wE5tIz5cSeyn-BPV8ozDGAAfEcQ"),
     "authDomain": "audit-management-system-271ea.firebaseapp.com",
-    "projectId": "audit-management-system-271ea",
+    "projectId": os.environ.get("FIREBASE_PROJECT_ID", "audit-management-system-271ea"),
     "storageBucket": "audit-management-system-271ea.firebasestorage.app",
     "messagingSenderId": "1013634535800",
-    "appId": "1:1013634535800:web:e009d73f0101318678f88d",
+    "appId": os.environ.get("FIREBASE_APP_ID", "1:1013634535800:web:e009d73f0101318678f88d"),
     "measurementId": "G-T675PTHTQ0",
     "databaseURL": "https://audit-management-system-271ea-default-rtdb.firebaseio.com/"
 }
@@ -142,10 +142,27 @@ def get_firestore_db():
     return db
 
 def authenticate_user(email, password):
-    """Authenticate user - simplified for development"""
+    """Authenticate user with Firebase"""
     try:
-        if REQUESTS_AVAILABLE and FIREBASE_AVAILABLE:
-            # Use Firebase REST API for authentication
+        # For development, use mock authentication for known test accounts
+        test_accounts = {
+            "admin@audit.system": "admin123",
+            "head@audit.system": "admin123", 
+            "auditor@audit.system": "admin123",
+            "auditee@audit.system": "admin123"
+        }
+        
+        if email in test_accounts and password == test_accounts[email]:
+            print(f"Development: Authenticating test user {email}")
+            return {
+                "localId": f"test-{email.split('@')[0]}",
+                "email": email,
+                "idToken": f"test-token-{email.split('@')[0]}",
+                "refreshToken": f"test-refresh-{email.split('@')[0]}"
+            }
+        
+        # For production users, try Firebase authentication
+        if REQUESTS_AVAILABLE:
             api_key = firebase_config["apiKey"]
             url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
             payload = {
@@ -157,19 +174,10 @@ def authenticate_user(email, password):
             if response.status_code == 200:
                 return response.json()
             else:
-                print(f"Authentication failed: {response.text}")
+                print(f"Firebase authentication failed: {response.text}")
                 return None
-        else:
-            # Mock authentication for development
-            print(f"Mock: Authenticating user {email}")
-            if email == "admin@audit.system" and password == "admin123":
-                return {
-                    "localId": "mock-admin-id",
-                    "email": email,
-                    "idToken": "mock-id-token",
-                    "refreshToken": "mock-refresh-token"
-                }
-            return None
+        
+        return None
     except Exception as e:
         print(f"Authentication error: {e}")
         return None

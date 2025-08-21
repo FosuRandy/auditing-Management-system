@@ -1,200 +1,318 @@
-{% extends "base.html" %}
-
-{% block title %}Auditee Dashboard - Audit Management System{% endblock %}
-
-{% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="h2 mb-4">
-            <i class="fas fa-user-check me-2"></i>Auditee Dashboard
-            <small class="text-muted">- {{ current_user.full_name }}</small>
-        </h1>
-    </div>
-</div>
-
-<!-- Quick Statistics -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ stats.active_audits }}</h4>
-                        <p class="card-text">Active Audits</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-clipboard-list fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ stats.pending_findings }}</h4>
-                        <p class="card-text">Pending Findings</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-exclamation-circle fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-danger text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ stats.overdue_actions }}</h4>
-                        <p class="card-text">Overdue Actions</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-clock fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ stats.completed_actions }}</h4>
-                        <p class="card-text">Completed Actions</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-check-circle fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Findings -->
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-search me-2"></i>Recent Findings Assigned to Me
-                </h5>
-                <a href="{{ url_for('auditee_findings') }}" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-eye me-1"></i>View All
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditee Dashboard - Audit Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-warning">
+        <div class="container-fluid">
+            <a class="navbar-brand text-dark" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-file-alt mr-2"></i> Auditee Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-dark" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
                 </a>
             </div>
-            <div class="card-body p-0">
-                {% if recent_findings %}
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Finding ID</th>
-                                <th>Description</th>
-                                <th>Severity</th>
-                                <th>Status</th>
-                                <th>Due Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for finding in recent_findings %}
-                            <tr>
-                                <td><code>{{ finding.reference_number }}</code></td>
-                                <td>
-                                    <strong>{{ finding.title[:50] }}{% if finding.title|length > 50 %}...{% endif %}</strong>
-                                    <br><small class="text-muted">{{ finding.audit.title }}</small>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ 'danger' if finding.severity == 'critical' else 'warning' if finding.severity == 'high' else 'info' if finding.severity == 'medium' else 'secondary' }}">
-                                        {{ finding.severity.title() }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ 'warning' if finding.status == 'open' else 'info' if finding.status == 'in_progress' else 'success' if finding.status == 'resolved' else 'secondary' }}">
-                                        {{ finding.status.replace('_', ' ').title() }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {{ finding.due_date.strftime('%m/%d/%Y') if finding.due_date else '-' }}
-                                    {% if finding.due_date and finding.due_date < today %}
-                                    <br><small class="text-danger">Overdue</small>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{{ url_for('auditee_finding_detail', finding_id=finding.id) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="text-center py-4">
-                    <i class="fas fa-search text-muted" style="font-size: 3rem;"></i>
-                    <p class="text-muted mt-2">No findings assigned yet</p>
-                </div>
-                {% endif %}
-            </div>
         </div>
-    </div>
-    
-    <div class="col-lg-4">
-        <!-- Urgent Actions -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-fire me-2"></i>Urgent Actions Required
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if urgent_actions %}
-                <div class="list-group list-group-flush">
-                    {% for action in urgent_actions %}
-                    <div class="list-group-item">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">{{ action.title }}</h6>
-                            <small class="text-danger">{{ action.days_remaining }} days left</small>
-                        </div>
-                        <p class="mb-1">{{ action.description[:100] }}{% if action.description|length > 100 %}...{% endif %}</p>
-                        <small class="text-muted">Due: {{ action.due_date.strftime('%m/%d/%Y') }}</small>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Active Audits</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.active_audits }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                {% else %}
-                <p class="text-muted text-center py-3">No urgent actions</p>
-                {% endif %}
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Actions</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pending_actions }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-hourglass-half fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-danger shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Overdue Actions</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.overdue_actions }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Unread Messages</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.unread_messages }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-envelope fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <!-- Quick Links -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-link me-2"></i>Quick Links
-                </h5>
+
+        <div class="row">
+            <!-- Active Audits -->
+            <div class="col-xl-8 col-lg-7">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Active Audits Affecting My Department</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if auditee_audits %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Audit Title</th>
+                                            <th>Status</th>
+                                            <th>Priority</th>
+                                            <th>Auditor</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for audit in auditee_audits %}
+                                        <tr>
+                                            <td>{{ audit.title or 'Untitled Audit' }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if audit.status == 'completed' else 'warning' if audit.status == 'in_progress' else 'info' if audit.status == 'review' else 'secondary' }}">
+                                                    {{ audit.status.replace('_', ' ').title() }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ 'danger' if audit.priority == 'high' else 'warning' if audit.priority == 'medium' else 'info' }}">
+                                                    {{ audit.priority.title() if audit.priority else 'Normal' }}
+                                                </span>
+                                            </td>
+                                            <td>{{ audit.get('auditor_name', 'Not assigned') }}</td>
+                                            <td>
+                                                <a href="{{ url_for('audit_response', audit_id=audit.id) }}" class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-reply mr-1"></i> Respond
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No active audits at this time</p>
+                                <p class="text-muted small">You'll see audits here when they are assigned to your department</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('auditee_findings') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-search me-2"></i>My Findings
-                    </a>
-                    <a href="{{ url_for('auditee_corrective_actions') }}" class="btn btn-outline-warning">
-                        <i class="fas fa-tasks me-2"></i>Corrective Actions
-                    </a>
-                    <a href="{{ url_for('auditee_evidence') }}" class="btn btn-outline-success">
-                        <i class="fas fa-file-upload me-2"></i>Upload Evidence
-                    </a>
+
+            <!-- Quick Actions -->
+            <div class="col-xl-4 col-lg-5">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <a href="{{ url_for('corrective_actions') }}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-tasks mr-3"></i> My Corrective Actions
+                                {% if stats.pending_actions > 0 %}
+                                    <span class="badge bg-warning float-end">{{ stats.pending_actions }}</span>
+                                {% endif %}
+                            </a>
+                            <a href="{{ url_for('document_requests') }}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-file-alt mr-3"></i> Document Requests
+                            </a>
+                            <a href="{{ url_for('upload_evidence') }}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-upload mr-3"></i> Upload Evidence
+                            </a>
+                            <a href="{{ url_for('messages') }}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-envelope mr-3"></i> Messages
+                                {% if stats.unread_messages > 0 %}
+                                    <span class="badge bg-danger float-end">{{ stats.unread_messages }}</span>
+                                {% endif %}
+                            </a>
+                            <a href="{{ url_for('auditee_reports') }}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-chart-line mr-3"></i> My Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Overview Chart -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Corrective Actions Status</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="actionsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Corrective Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">My Corrective Actions</h6>
+                        {% if stats.overdue_actions > 0 %}
+                            <span class="badge bg-danger">{{ stats.overdue_actions }} Overdue</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        {% if my_actions %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Action Title</th>
+                                            <th>Priority</th>
+                                            <th>Status</th>
+                                            <th>Target Date</th>
+                                            <th>Progress</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for action in my_actions[:10] %}
+                                        <tr class="{{ 'table-danger' if action.get('target_date') and action.get('target_date') < now() and action.get('status') != 'completed' else '' }}">
+                                            <td>{{ action.title or 'Untitled Action' }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'danger' if action.priority == 'high' else 'warning' if action.priority == 'medium' else 'info' }}">
+                                                    {{ action.priority.title() if action.priority else 'Normal' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if action.status == 'completed' else 'warning' if action.status == 'in_progress' else 'secondary' }}">
+                                                    {{ action.status.replace('_', ' ').title() }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {{ action.get('target_date', 'Not set') }}
+                                                {% if action.get('target_date') and action.get('target_date') < now() and action.get('status') != 'completed' %}
+                                                    <i class="fas fa-exclamation-triangle text-danger ml-1"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="progress">
+                                                    <div class="progress-bar" style="width: {{ action.get('progress', 0) }}%">
+                                                        {{ action.get('progress', 0) }}%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('corrective_action_detail', action_id=action.id) }}" class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-edit mr-1"></i> Update
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No corrective actions assigned</p>
+                                <p class="text-muted small">Corrective actions will appear here when findings require your response</p>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize actions chart
+        const ctx = document.getElementById('actionsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'In Progress', 'Completed', 'Overdue'],
+                datasets: [{
+                    data: [
+                        {{ my_actions|selectattr('status', 'equalto', 'pending')|list|length }},
+                        {{ my_actions|selectattr('status', 'equalto', 'in_progress')|list|length }},
+                        {{ my_actions|selectattr('status', 'equalto', 'completed')|list|length }},
+                        {{ stats.overdue_actions }}
+                    ],
+                    backgroundColor: ['#6c757d', '#ffc107', '#28a745', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+
+    <style>
+    .border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+    .border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+    .border-left-info { border-left: 0.25rem solid #36b9cc !important; }
+    .border-left-warning { border-left: 0.25rem solid #f6c23e !important; }
+    .border-left-danger { border-left: 0.25rem solid #e74a3b !important; }
+    .text-xs { font-size: 0.7rem; }
+    </style>
+</body>
+</html>

@@ -80,7 +80,9 @@ def login():
     session['firebase_token'] = firebase_user['idToken']
     
     # Update last login
-    user_model.update(user_data['id'], {'last_login': datetime.now()})
+    # Update last login time in data store
+    if user_data['id'] in DATA_STORE['users']:
+        DATA_STORE['users'][user_data['id']]['last_login'] = datetime.now()
     
     log_audit_action('login', 'user', user_data['id'], f'User {email} logged in')
     
