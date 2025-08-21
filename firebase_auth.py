@@ -12,7 +12,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def role_required(*roles):
+def role_required(*required_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -20,8 +20,7 @@ def role_required(*roles):
                 flash('Please log in to access this page.', 'warning')
                 return redirect(url_for('landing'))
             
-            user_model = UserModel()
-            user = user_model.get(session['user_id'])
+            user = get_current_user()
             
             # Map old role names to new ones for compatibility
             role_mapping = {
@@ -29,14 +28,14 @@ def role_required(*roles):
                 'supervisor': 'head_of_business_control'
             }
             
-            # Map allowed roles to actual roles
+            # Get the mapped roles
             mapped_roles = []
-            for role in roles:
+            for role in required_roles:
                 mapped_roles.append(role_mapping.get(role, role))
             
             if not user or user.get('role') not in mapped_roles or not user.get('is_active', False):
                 flash('You do not have permission to access this page.', 'error')
-                return redirect(url_for('dashboard'))
+                return redirect(url_for('landing'))
             return f(*args, **kwargs)
         return decorated_function
     return decorator
